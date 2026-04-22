@@ -1,0 +1,430 @@
+diff --git a/pawtrack_demo.html b/pawtrack_demo.html
+index a7b8475..8d0c9ce 100644
+--- a/pawtrack_demo.html
++++ b/pawtrack_demo.html
+@@ -155,10 +155,20 @@ tr:hover td{background:var(--color-background-tertiary)}
+ .activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-border-tertiary)}
+ .activity-item:last-child{border-bottom:none;padding-bottom:0}
+ .activity-item:first-child{padding-top:0}
++.activity-feed{max-height:560px;overflow-y:auto;padding-right:6px}
++.activity-filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
++.activity-filter-chip{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:8px 12px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:12px;font-weight:700;letter-spacing:0.4px;cursor:pointer;transition:all 0.2s ease}
++.activity-filter-chip:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
++.activity-filter-chip.active{background:var(--color-primary-light);color:var(--color-primary)}
++.activity-filter-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:rgba(0,0,0,0.06);font-size:11px;font-weight:700}
++.activity-filter-chip.active .activity-filter-count{background:rgba(247,103,7,0.15)}
+ .activity-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:6px;box-shadow:0 0 0 3px var(--color-background-primary)}
+ .dot-green{background:var(--color-text-success)}.dot-amber{background:var(--color-text-warning)}.dot-blue{background:var(--color-text-info)}
+ .activity-text{font-size:14px;line-height:1.5;color:var(--color-text-primary)}
+ .activity-time{font-size:12px;color:var(--color-text-tertiary);margin-top:4px;font-weight:500}
++.activity-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
++.activity-type{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.4px;background:var(--color-background-secondary);color:var(--color-text-secondary);text-transform:uppercase}
++.activity-empty{padding:24px 0;color:var(--color-text-secondary);font-size:14px}
+ .avatar{width:36px;height:36px;border-radius:50%;background:var(--color-primary-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+ 
+ /* ── Overlay: fixed fullscreen dim layer ── */
+@@ -319,8 +329,12 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
+     </div>
+     <div class="two-col">
+       <div class="section-card">
+-        <div class="section-header"><span class="section-title">Recent activity</span></div>
+-        <div id="activity-feed">
++        <div class="section-header">
++          <span class="section-title">Recent activity</span>
++          <span class="muted-text" id="activity-summary">Loading activity...</span>
++        </div>
++        <div id="activity-filter-bar" class="activity-filter-bar"></div>
++        <div id="activity-feed" class="activity-feed">
+           <div class="activity-item"><div class="activity-dot dot-blue"></div><div><div class="activity-text">Loading activity...</div><div class="activity-time">Backend API</div></div></div>
+         </div>
+       </div>
+@@ -558,8 +572,8 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
+ 
+       <div class="section-card bonus-wide">
+         <div class="section-header"><span class="section-title">Integrity and anomaly audit</span></div>
+-        <table><thead><tr><th>Check</th><th>Severity</th><th>Status</th><th>Findings</th><th>Refinement</th></tr></thead><tbody id="llm-audit-tbody">
+-          <tr><td colspan="5" style="color:var(--color-text-secondary)">Loading integrity checks...</td></tr>
++        <table><thead><tr><th>Check</th><th>Severity</th><th>Enforcement</th><th>Status</th><th>Findings</th><th>Refinement</th></tr></thead><tbody id="llm-audit-tbody">
++          <tr><td colspan="6" style="color:var(--color-text-secondary)">Loading integrity checks...</td></tr>
+         </tbody></table>
+       </div>
+ 
+@@ -628,12 +642,7 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
+     </div>
+     <div class="form-group">
+       <label class="form-label">Housing type</label>
+-      <select class="form-control" id="form-housing">
+-        <option value="">Select housing type...</option>
+-        <option>Apartment</option><option>Condo</option><option>House</option>
+-        <option>House with garden</option>
+-        <option>House without garden</option><option>Shared housing</option>
+-      </select>
++      <select class="form-control" id="form-housing"><option value="">Select housing type...</option></select>
+     </div>
+     <div class="hint-box">
+       Submitting creates a new record in <code>ADOPTION_APPLICATION</code> shown as <code>Pending</code>. The pet's status will be updated to <code>Reserved</code>.
+@@ -765,6 +774,10 @@ let llmBonus = null;
+ let dashboard = null;
+ let reviewingIndex = -1;
+ let crudContext = null;
++let selectedActivityTypes = null;
++const APP_TIMEZONE = 'Asia/Shanghai';
++const HOUSING_TYPES = ['Apartment','Condo','House','Townhouse','House with garden','House without garden','Shared housing'];
++const ACTIVITY_TYPE_ORDER = ['adoption','application_review','application','applicant','medical','vaccination','care_assignment','follow_up','volunteer','pet_intake'];
+ 
+ const crudConfigs = {
+   'shelters': {
+@@ -808,7 +821,7 @@ const crudConfigs = {
+       {name:'phone', label:'Phone'},
+       {name:'email', label:'Email', type:'email'},
+       {name:'address', label:'Address', type:'textarea', wide:true},
+-      {name:'housingType', label:'Housing type', type:'select', options: () => ['Apartment','Condo','House','Townhouse','House with garden','House without garden','Shared housing'].map(v => ({value:v, label:v}))},
++      {name:'housingType', label:'Housing type', type:'select', options: housingTypeOptions},
+       {name:'hasPetExperience', label:'Has pet experience', type:'bool'},
+       {name:'createdAt', label:'Created at', type:'date', defaultValue: todayIso}
+     ]
+@@ -948,8 +961,116 @@ function entityCode(prefix, value) {
+   return value ? `${prefix}-${String(value).padStart(3, '0')}` : '';
+ }
+ 
++function zonedDateParts(baseDate = new Date()) {
++  const parts = new Intl.DateTimeFormat('en-CA', {
++    timeZone: APP_TIMEZONE,
++    year: 'numeric',
++    month: '2-digit',
++    day: '2-digit'
++  }).formatToParts(baseDate);
++  return {
++    year: Number(parts.find(p => p.type === 'year')?.value || 0),
++    month: Number(parts.find(p => p.type === 'month')?.value || 0),
++    day: Number(parts.find(p => p.type === 'day')?.value || 0)
++  };
++}
++
++function formatDateParts(parts) {
++  return `${String(parts.year).padStart(4, '0')}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
++}
++
+ function todayIso() {
+-  return new Date().toISOString().slice(0, 10);
++  return formatDateParts(zonedDateParts());
++}
++
++function housingTypeOptions() {
++  return HOUSING_TYPES.map(v => ({value:v, label:v}));
++}
++
++function activityTypeLabel(type) {
++  const labels = {
++    adoption: 'Adoption',
++    application_review: 'Review',
++    application: 'Application',
++    applicant: 'Applicant',
++    medical: 'Medical',
++    vaccination: 'Vaccination',
++    care_assignment: 'Assignment',
++    follow_up: 'Follow-up',
++    volunteer: 'Volunteer',
++    pet_intake: 'Pet intake'
++  };
++  return labels[type] || String(type || 'Activity').replace(/_/g, ' ');
++}
++
++function activityTypeEntries(activities) {
++  const counts = new Map();
++  activities.forEach(activity => {
++    const type = activity.eventType || 'activity';
++    counts.set(type, (counts.get(type) || 0) + 1);
++  });
++  return [...counts.entries()]
++    .map(([type, count]) => ({type, count}))
++    .sort((a, b) => {
++      const leftIndex = ACTIVITY_TYPE_ORDER.indexOf(a.type);
++      const rightIndex = ACTIVITY_TYPE_ORDER.indexOf(b.type);
++      if (leftIndex !== -1 || rightIndex !== -1) {
++        return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex)
++          - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
++      }
++      return activityTypeLabel(a.type).localeCompare(activityTypeLabel(b.type));
++    });
++}
++
++function normalizeSelectedActivityTypes(activities) {
++  if (!(selectedActivityTypes instanceof Set)) return;
++  const availableTypes = new Set(activityTypeEntries(activities).map(entry => entry.type));
++  selectedActivityTypes = new Set([...selectedActivityTypes].filter(type => availableTypes.has(type)));
++  if (selectedActivityTypes.size === 0) {
++    selectedActivityTypes = null;
++  }
++}
++
++function filteredActivities(activities) {
++  normalizeSelectedActivityTypes(activities);
++  if (!(selectedActivityTypes instanceof Set)) return activities;
++  return activities.filter(activity => selectedActivityTypes.has(activity.eventType || 'activity'));
++}
++
++function toggleActivityType(type) {
++  const activities = dashboard?.activities || [];
++  const availableTypes = activityTypeEntries(activities).map(entry => entry.type);
++  if (type === '__all__') {
++    selectedActivityTypes = null;
++    renderDashboard();
++    return;
++  }
++  if (!availableTypes.includes(type)) return;
++  if (!(selectedActivityTypes instanceof Set)) {
++    selectedActivityTypes = new Set([type]);
++  } else {
++    const next = new Set(selectedActivityTypes);
++    if (next.has(type)) {
++      next.delete(type);
++    } else {
++      next.add(type);
++    }
++    selectedActivityTypes = next.size ? next : null;
++  }
++  renderDashboard();
++}
++
++function setHousingTypeSelectValue(selectEl, value = '') {
++  if (!selectEl) return;
++  selectEl.innerHTML = '<option value="">Select housing type...</option>' +
++    HOUSING_TYPES.map(type => `<option value="${escapeFormValue(type)}">${escapeHtml(type)}</option>`).join('');
++  selectEl.value = value && HOUSING_TYPES.includes(value) ? value : '';
++}
++
++function isoDateToUtcMs(dateText) {
++  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateText || ''));
++  if (!match) return NaN;
++  return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+ }
+ 
+ function petOptions() {
+@@ -971,7 +1092,7 @@ function volunteerById(id) {
+ function approvedApplicationsForPet(petId, excludeApplicationId=null) {
+   return apps.filter(a =>
+     Number(a.petId) === Number(petId)
+-    && a.status === 'Approved'
++    && a.rawStatus === 'Approved'
+     && Number(a.applicationId) !== Number(excludeApplicationId)
+   );
+ }
+@@ -979,7 +1100,7 @@ function approvedApplicationsForPet(petId, excludeApplicationId=null) {
+ function pendingApplicationsForPet(petId, excludeApplicationId=null) {
+   return apps.filter(a =>
+     Number(a.petId) === Number(petId)
+-    && a.status === 'Pending'
++    && a.rawStatus === 'Under Review'
+     && Number(a.applicationId) !== Number(excludeApplicationId)
+   );
+ }
+@@ -1003,13 +1124,15 @@ function petStatusOptions(item) {
+   return ['Available','Medical hold'].map(v => ({value:v, label:v}));
+ }
+ 
+-function duplicateEmail(items, idField, currentId, email) {
+-  if (!email) return false;
+-  const normalized = email.trim().toLowerCase();
+-  return items.some(item =>
+-    Number(item[idField]) !== Number(currentId)
+-    && (item.email || '').trim().toLowerCase() === normalized
+-  );
++function normalizePetStatusValue(value) {
++  const normalized = String(value || '').trim().toLowerCase().replace(/\s+/g, '_');
++  const map = {
++    'available': 'available',
++    'reserved': 'reserved',
++    'adopted': 'adopted',
++    'medical_hold': 'medical_hold'
++  };
++  return map[normalized] || normalized;
+ }
+ 
+ function firstDateConflict(entries, limitDate) {
+@@ -1024,7 +1147,7 @@ function clientValidateCrudPayload(resource, payload) {
+   if (resource === 'shelters' && editingId != null) {
+     const activePets = pets.filter(p =>
+       Number(p.shelterId) === editingId
+-      && ['Available', 'Reserved', 'Medical hold'].includes(p.status)
++      && ['available', 'reserved', 'medical_hold'].includes(p.rawStatus)
+     ).length;
+     if (payload.capacity != null && Number(payload.capacity) < activePets) {
+       return 'Shelter capacity cannot be lower than its active pet count.';
+@@ -1032,6 +1155,7 @@ function clientValidateCrudPayload(resource, payload) {
+   }
+ 
+   if (resource === 'pets') {
++    const nextStatus = normalizePetStatusValue(payload.status);
+     if (payload.birth && payload.intake && payload.birth > payload.intake) {
+       return 'Estimated birth date cannot be after intake date.';
+     }
+@@ -1039,7 +1163,7 @@ function clientValidateCrudPayload(resource, payload) {
+       return 'Pet intake date cannot be in the future.';
+     }
+     if (editingId == null) {
+-      if (payload.status === 'Reserved' || payload.status === 'Adopted') {
++      if (nextStatus === 'reserved' || nextStatus === 'adopted') {
+         return 'New pets can start only as Available or Medical hold.';
+       }
+       return null;
+@@ -1047,13 +1171,13 @@ function clientValidateCrudPayload(resource, payload) {
+ 
+     const pending = pendingApplicationsForPet(editingId).length > 0;
+     const approved = approvedApplicationsForPet(editingId).length > 0;
+-    if (pending && payload.status !== 'Reserved') {
++    if (pending && nextStatus !== 'reserved') {
+       return 'A pet with a pending application must stay Reserved.';
+     }
+-    if (!pending && approved && payload.status !== 'Adopted') {
++    if (!pending && approved && nextStatus !== 'adopted') {
+       return 'A pet with an approved adoption must stay Adopted.';
+     }
+-    if (!pending && !approved && (payload.status === 'Reserved' || payload.status === 'Adopted')) {
++    if (!pending && !approved && (nextStatus === 'reserved' || nextStatus === 'adopted')) {
+       return 'Reserved and Adopted statuses must come from the adoption workflow, not direct edits.';
+     }
+     if (payload.intake) {
+@@ -1080,10 +1204,6 @@ function clientValidateCrudPayload(resource, payload) {
+     return null;
+   }
+ 
+-  if (resource === 'applicants' && duplicateEmail(applicants, 'applicantId', editingId, payload.email)) {
+-    return 'Applicant email already exists.';
+-  }
+-
+   if (resource === 'medical-records') {
+     const pet = petById(payload.petId);
+     if (pet && payload.date && pet.intake && payload.date < pet.intake) {
+@@ -1102,9 +1222,6 @@ function clientValidateCrudPayload(resource, payload) {
+   }
+ 
+   if (resource === 'volunteers') {
+-    if (duplicateEmail(volunteers, 'volunteerId', editingId, payload.email)) {
+-      return 'Volunteer email already exists.';
+-    }
+     if (editingId != null && payload.joined) {
+       const earlyAssignment = firstDateConflict(
+         careAssignments
+@@ -1393,15 +1510,30 @@ function renderDashboard() {
+     <td>${escapeHtml(row.share)}%</td>
+   </tr>`).join('') : '<tr><td colspan="3" style="color:var(--color-text-secondary)">No status data</td></tr>';
+ 
++  const summary = document.getElementById('activity-summary');
++  const filterBar = document.getElementById('activity-filter-bar');
+   const feed = document.getElementById('activity-feed');
+   const activities = dashboard?.activities || [];
+-  feed.innerHTML = activities.length ? activities.map(a => `<div class="activity-item">
++  const filtered = filteredActivities(activities);
++  const typeEntries = activityTypeEntries(activities);
++  const timezone = dashboard?.timezone || APP_TIMEZONE;
++  summary.textContent = activities.length
++    ? `${filtered.length} of ${activities.length} events shown`
++    : 'No activity yet';
++  filterBar.innerHTML = activities.length ? [
++    `<button class="activity-filter-chip${selectedActivityTypes instanceof Set ? '' : ' active'}" onclick="toggleActivityType('__all__')">All <span class="activity-filter-count">${escapeHtml(activities.length)}</span></button>`,
++    ...typeEntries.map(entry => `<button class="activity-filter-chip${selectedActivityTypes instanceof Set && selectedActivityTypes.has(entry.type) ? ' active' : ''}" onclick="toggleActivityType('${escapeHtml(entry.type)}')">${escapeHtml(activityTypeLabel(entry.type))} <span class="activity-filter-count">${escapeHtml(entry.count)}</span></button>`)
++  ].join('') : '';
++  feed.innerHTML = filtered.length ? filtered.map(a => `<div class="activity-item">
+     <div class="activity-dot ${escapeHtml(a.dotClass)}"></div>
+     <div>
+       <div class="activity-text">${escapeHtml(a.text)}</div>
+-      <div class="activity-time">${escapeHtml(a.time)}</div>
++      <div class="activity-meta">
++        <span class="activity-type">${escapeHtml(activityTypeLabel(a.eventType || 'activity'))}</span>
++        <div class="activity-time">${escapeHtml(a.time)} · ${escapeHtml(timezone)}</div>
++      </div>
+     </div>
+-  </div>`).join('') : '<div class="activity-item"><div class="activity-dot dot-blue"></div><div><div class="activity-text">No recent activity</div><div class="activity-time">Database</div></div></div>';
++  </div>`).join('') : '<div class="activity-empty">No activity matches the current filter.</div>';
+ }
+ 
+ function renderShelters() {
+@@ -1560,8 +1692,8 @@ function renderApps(data) {
+       </td></tr>`; return; }
+   tb.innerHTML = data.map(a => {
+     const gi = apps.indexOf(a);
+-    const approvalLocked = a.status === 'Pending' && approvedApplicationsForPet(a.petId, a.applicationId).length > 0;
+-    const actions = a.status === 'Pending'
++    const approvalLocked = a.rawStatus === 'Under Review' && approvedApplicationsForPet(a.petId, a.applicationId).length > 0;
++    const actions = a.rawStatus === 'Under Review'
+       ? approvalLocked
+         ? `<div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="openAppDetail(${gi})">View</button><span class="muted-text">Approval locked</span></div>`
+         : `<div style="display:flex;gap:6px"><button class="btn-sm" onclick="openAppDetail(${gi})">View</button><button class="btn-approve" onclick="openReview(${gi})">Review</button></div>`
+@@ -1665,7 +1797,7 @@ function openNewAppModal() {
+   const petSel = document.getElementById('form-pet');
+   petSel.innerHTML = '<option value="">Select a pet...</option>';
+   pets.filter(p =>
+-    p.status === 'Available'
++    p.rawStatus === 'available'
+     && !approvedApplicationsForPet(p.petId).length
+     && !pendingApplicationsForPet(p.petId).length
+   ).forEach(p => {
+@@ -1674,18 +1806,16 @@ function openNewAppModal() {
+     o.value = p.petId;
+     petSel.appendChild(o);
+   });
++  setHousingTypeSelectValue(document.getElementById('form-housing'));
+   document.getElementById('form-applicant').value = '';
+   document.getElementById('form-reason').value = '';
+-  document.getElementById('form-housing').value = '';
+   document.getElementById('new-app-overlay').classList.add('open');
+ }
+ 
+ function syncHousingFromApplicant() {
+   const applicantId = Number(document.getElementById('form-applicant').value);
+   const applicant = applicants.find(a => a.applicantId === applicantId);
+-  if (applicant?.housingType) {
+-    document.getElementById('form-housing').value = applicant.housingType;
+-  }
++  setHousingTypeSelectValue(document.getElementById('form-housing'), applicant?.housingType || '');
+ }
+ 
+ async function submitNewApp() {
+@@ -1716,7 +1846,7 @@ function openNewFollowupModal() {
+     o.value = record.adoptionId;
+     adoptionSel.appendChild(o);
+   });
+-  document.getElementById('followup-date').value = new Date().toISOString().slice(0, 10);
++  document.getElementById('followup-date').value = todayIso();
+   document.getElementById('followup-type').value = '';
+   document.getElementById('followup-condition').value = '';
+   document.getElementById('followup-feedback').value = '';
+@@ -1792,11 +1922,10 @@ function renderMedical() {
+ 
+ function dueDateStyle(dateText) {
+   if (!dateText) return '';
+-  const today = new Date();
+-  today.setHours(0, 0, 0, 0);
+-  const due = new Date(`${dateText}T00:00:00`);
+-  if (Number.isNaN(due.getTime())) return '';
+-  const diffDays = Math.ceil((due - today) / 86400000);
++  const todayMs = isoDateToUtcMs(todayIso());
++  const dueMs = isoDateToUtcMs(dateText);
++  if (Number.isNaN(todayMs) || Number.isNaN(dueMs)) return '';
++  const diffDays = Math.floor((dueMs - todayMs) / 86400000);
+   if (diffDays < 0) return ' style="color:#A32D2D"';
+   if (diffDays <= 30) return ' style="color:#854F0B"';
+   return '';
+@@ -2001,10 +2130,11 @@ function renderLlmBonus() {
+ 
+   document.getElementById('llm-audit-tbody').innerHTML = renderTableRows(
+     data.integrityAudit,
+-    5,
++    6,
+     row => `<tr>
+       <td><div style="font-weight:500">${escapeHtml(row.title)}</div><div class="muted-text">${escapeHtml(row.llmRationale)}</div></td>
+       <td>${escapeHtml(row.severity)}</td>
++      <td><code>${escapeHtml(row.enforcementLayer)}</code></td>
+       <td>${statusBadge(row.status)}</td>
+       <td>${escapeHtml(row.findingCount)}</td>
+       <td>${escapeHtml(row.refinement)}</td>
+@@ -2068,7 +2198,7 @@ async function submitLlmPrompt() {
+ function renderLlmQueryResult(result) {
+   const summary = document.getElementById('llm-query-summary');
+   summary.style.display = 'block';
+-  summary.innerHTML = `<strong>${escapeHtml(result.matchedQuery.title)}</strong><br><span class="muted-text">${escapeHtml(result.safetyModel)} Returned ${escapeHtml(result.rowCount)} rows.</span>`;
++  summary.innerHTML = `<strong>${escapeHtml(result.matchedQuery.title)}</strong><br><span class="muted-text">${escapeHtml(result.safetyModel)} Category: ${escapeHtml(result.matchedQuery.category)}. Read-only: ${escapeHtml(result.matchedQuery.readOnly ? 'Yes' : 'No')}. Returned ${escapeHtml(result.rowCount)} rows.</span>`;
+ 
+   const sqlBlock = document.getElementById('llm-query-sql');
+   sqlBlock.style.display = 'block';
