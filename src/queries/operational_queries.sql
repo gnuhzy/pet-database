@@ -2,6 +2,16 @@
 -- operational_queries.sql
 -- Daily practical operations for shelter staff
 -- =========================================
+--
+-- NOTE: Q1-Q6 below are read-only SELECT queries that are registered into
+-- the LLM query catalog (/api/llm-bonus, /api/llm-query).
+-- Q7 and Q8 are mutation examples (UPDATE / INSERT) kept here purely as
+-- documentation of the workflow. They are intentionally filtered out of
+-- the LLM catalog at load time (see load_query_registry in web_server.py)
+-- so that natural-language prompts can never trigger a write.
+-- The real mutations are executed via the authenticated REST endpoints:
+--   Q7 -> PATCH /api/applications/{id}/review (Approve decision)
+--   Q8 -> POST  /api/follow-ups
 
 -- Q1: View all pets currently housed in a specific shelter
 -- Purpose: Shelter staff checks the current pet list in one shelter

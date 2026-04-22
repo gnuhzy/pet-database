@@ -4,7 +4,18 @@
 
 These tests cover daily operations, analytical queries, referential integrity, and frontend/backend workflow behavior for the PawTrack web demo.
 
-## SQL Dialect Note
+## SQL 方言说明 (SQL Dialect Note)
+
+项目 SQL 文件和本测试用例使用 MySQL 风格的日期函数（`CURDATE()`、
+`DATE_ADD(..., INTERVAL n DAY)`、`DATEDIFF(...)`）。实际后端 `src/web_server.py`
+使用 SQLite，并在 `normalize_sql()` 中自动将上述函数转换为 SQLite 等价形式
+（`date('now')`、`date('now','+n day')`、`julianday(...)` 差值）。因此：
+
+- 通过后端 API / MCP 运行这些测试用例时，SQL 会自动适配。
+- 若直接用 `sqlite3` CLI 手动执行 SQL 文件，请先按上述映射替换日期函数，
+  或使用 `/api/llm-query` 端点让后端完成归一化。
+
+---
 
 The SQL query files contain a small amount of MySQL-style date syntax:
 

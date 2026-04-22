@@ -377,6 +377,8 @@ def load_query_registry() -> list[StoredQuery]:
     for sql_file in sorted(QUERIES_DIR.glob("*.sql")):
         category = sql_file.stem.replace("_queries", "").replace("_", " ")
         queries.extend(parse_query_file(sql_file.read_text(encoding="utf-8"), category))
+    # Only expose read-only SELECT queries through the LLM catalog. Mutation
+    # examples kept in the .sql files for documentation are silently skipped.
     return [q for q in queries if is_read_only_query(q)]
 
 
@@ -406,34 +408,63 @@ def is_read_only_query(query: StoredQuery) -> bool:
     return query.sql.lstrip().upper().startswith("SELECT")
 
 
+def _depluralize(word: str) -> str:
+    """Cheap English stem so plural prompts still match singular keywords."""
+    if len(word) <= 3:
+        return word
+    if word.endswith("ies") and len(word) > 4:
+        return word[:-3] + "y"
+    if word.endswith("ses") or word.endswith("xes") or word.endswith("zes"):
+        return word[:-2]
+    if word.endswith("s") and not word.endswith("ss"):
+        return word[:-1]
+    return word
+
+
+def _normalize_prompt(text: str) -> str:
+    """Lowercase, strip plurals, and collapse separators for matching."""
+    lowered = text.lower().replace("-", " ").replace("_", " ")
+    tokens = re.split(r"\W+", lowered)
+    return " ".join(_depluralize(tok) for tok in tokens if tok)
+
+
 def match_query_from_prompt(prompt: str, queries: list[StoredQuery]) -> StoredQuery:
     prompt_lower = prompt.lower()
+    prompt_normalized = _normalize_prompt(prompt)
     concept_map = [
-        (["vaccination due", "vaccine due", "upcoming vaccination", "vaccination soon"], "view_pets_whose_vaccination_due"),
-        (["adoptable", "available for adoption", "pets available", "available pets"], "view_all_pets_that_are_currently_available"),
+        (["vaccination due", "vaccine due", "upcoming vaccination", "vaccination soon", "vaccination reminder", "vaccine reminder", "due vaccination"], "view_pets_whose_vaccination_due"),
+        (["adoptable", "available for adoption", "pets available", "available pet", "pet available", "ready for adoption", "open for adoption"], "view_all_pets_that_are_currently_available"),
         (["occupancy", "occupied", "most occupied", "fullest", "shelter occupancy", "shelter capacity", "how full"], "analyze_current_occupancy"),
-        (["shelter", "shelter 1", "shelter 2", "pets in shelter"], "view_all_pets_currently_housed_in_a_specific_shelter"),
-        (["health info", "medical history", "full health", "vaccination and medical"], "view_the_full_health_information"),
-        (["volunteer assignment", "care assignment", "volunteer schedule"], "view_upcoming_care_assignments_for_a_volunteer"),
-        (["adoption application", "pending application", "under review"], "view_all_adoption_applications_that_are_currently_under_review"),
-        (["follow-up outcome", "post-adoption", "adopter feedback", "followup outcome"], "analyze_post-adoption_follow-up_outcomes"),
-        (["long stay", "longest", "stay long"], "analyze_pets_that_have_stayed_the_longest"),
-        (["housing type", "approval rate by housing", "rejected by housing"], "analyze_adoption_application_results_by_housing_type"),
-        (["adoption success rate", "adoption by species", "species demand"], "analyze_adoption_demand_and_success_rate_by_pet_species"),
-        (["volunteer workload", "completed tasks", "volunteer performance"], "analyze_volunteer_workload_based_on_care_assignments"),
+        (["shelter", "shelter 1", "shelter 2", "pet in shelter", "housed in"], "view_all_pets_currently_housed_in_a_specific_shelter"),
+        (["health info", "medical history", "full health", "vaccination and medical", "health record", "health profile"], "view_the_full_health_information"),
+        (["volunteer assignment", "care assignment", "volunteer schedule", "volunteer shift", "upcoming shift"], "view_upcoming_care_assignments_for_a_volunteer"),
+        (["adoption application", "pending application", "under review", "applications to review", "awaiting review"], "view_all_adoption_applications_that_are_currently_under_review"),
+        (["follow up outcome", "followup outcome", "post adoption", "adopter feedback", "follow-up outcome"], "analyze_post-adoption_follow-up_outcomes"),
+        (["long stay", "longest", "stay long", "long-stay", "stayed longest"], "analyze_pets_that_have_stayed_the_longest"),
+        (["housing type", "approval rate by housing", "rejected by housing", "housing approval"], "analyze_adoption_application_results_by_housing_type"),
+        (["adoption success rate", "adoption by species", "species demand", "most adopted species", "popular species"], "analyze_adoption_demand_and_success_rate_by_pet_species"),
+        (["volunteer workload", "completed task", "volunteer performance", "tasks per volunteer", "workload"], "analyze_volunteer_workload_based_on_care_assignments"),
     ]
 
     for keywords, name_fragment in concept_map:
-        if any(keyword in prompt_lower for keyword in keywords):
-            for query in queries:
-                if name_fragment in query.name:
-                    return query
+        for keyword in keywords:
+            normalized_keyword = _normalize_prompt(keyword)
+            if keyword in prompt_lower or normalized_keyword in prompt_normalized:
+                for query in queries:
+                    if name_fragment in query.name:
+                        return query
+                break
 
-    prompt_words = [word for word in re.split(r"\W+", prompt_lower) if len(word) > 3]
+    stop_words = {"the", "that", "this", "with", "from", "have", "which", "what", "find", "show", "list", "give", "some", "need", "want", "would", "could", "should", "about", "into", "onto", "pets", "pet"}
+    prompt_words = [
+        _depluralize(word)
+        for word in re.split(r"\W+", prompt_lower)
+        if len(word) > 3 and word not in stop_words
+    ]
     best = queries[0]
     best_score = -1
     for query in queries:
-        combined = f"{query.name} {query.description}".lower()
+        combined = _normalize_prompt(f"{query.name} {query.description}")
         score = sum(1 for word in prompt_words if word in combined)
         if score > best_score:
             best_score = score
@@ -1365,6 +1396,47 @@ def fetch_integrity_audit(conn: sqlite3.Connection) -> list[dict]:
             "refinement": "CRUD validation enforces date order for pet intake, medical visits, vaccinations, follow-ups, and care assignments.",
         },
         {
+            "id": "application_before_pet_intake",
+            "title": "Application cannot predate pet intake",
+            "severity": "high",
+            "llmRationale": "Applications for a pet that has not yet entered the shelter create an invalid operational timeline.",
+            "sql": """
+                SELECT a.application_id, a.pet_id, a.application_date, p.intake_date
+                FROM ADOPTION_APPLICATION a
+                JOIN PET p ON a.pet_id = p.pet_id
+                WHERE date(a.application_date) < date(p.intake_date)
+            """,
+            "refinement": "Application creation now rejects pets whose intake date is later than the application date, and pet intake edits cannot move past existing activity.",
+        },
+        {
+            "id": "cross_shelter_care_assignment",
+            "title": "Care assignments must stay within one shelter",
+            "severity": "high",
+            "llmRationale": "Volunteers and pets each belong to exactly one shelter, so cross-shelter care assignments indicate broken relationship semantics.",
+            "sql": """
+                SELECT c.assignment_id, c.volunteer_id, v.shelter_id AS volunteer_shelter_id, c.pet_id, p.shelter_id AS pet_shelter_id
+                FROM CARE_ASSIGNMENT c
+                JOIN VOLUNTEER v ON c.volunteer_id = v.volunteer_id
+                JOIN PET p ON c.pet_id = p.pet_id
+                WHERE v.shelter_id != p.shelter_id
+            """,
+            "refinement": "Care assignment creation now requires the volunteer and pet to belong to the same shelter, and shelter edits cannot retroactively break existing assignments.",
+        },
+        {
+            "id": "care_assignment_before_volunteer_join",
+            "title": "Care assignment cannot predate volunteer join date",
+            "severity": "medium",
+            "llmRationale": "Assignments before a volunteer officially joins the shelter are timeline anomalies.",
+            "sql": """
+                SELECT c.assignment_id, c.assignment_date, v.volunteer_id, v.join_date
+                FROM CARE_ASSIGNMENT c
+                JOIN VOLUNTEER v ON c.volunteer_id = v.volunteer_id
+                WHERE v.join_date IS NOT NULL
+                  AND date(c.assignment_date) < date(v.join_date)
+            """,
+            "refinement": "Care assignment validation now checks volunteer join date, and volunteer join-date edits cannot move later than existing assignments.",
+        },
+        {
             "id": "reserved_without_pending_application",
             "title": "Reserved pet must have a pending application",
             "severity": "medium",
@@ -1442,60 +1514,6 @@ def fetch_integrity_audit(conn: sqlite3.Connection) -> list[dict]:
             "refinement": "Approval inserts the ADOPTION_RECORD, and server startup reconciles historical approved applications.",
         },
         {
-            "id": "application_before_pet_intake",
-            "title": "Application cannot predate pet intake",
-            "severity": "high",
-            "llmRationale": "Applications for a pet that has not yet entered the shelter create an invalid operational timeline.",
-            "sql": """
-                SELECT a.application_id, a.pet_id, a.application_date, p.intake_date
-                FROM ADOPTION_APPLICATION a
-                JOIN PET p ON a.pet_id = p.pet_id
-                WHERE date(a.application_date) < date(p.intake_date)
-            """,
-            "refinement": "Application creation now rejects pets whose intake date is later than the application date, and pet intake edits cannot move past existing activity.",
-        },
-        {
-            "id": "cross_shelter_care_assignment",
-            "title": "Care assignments must stay within one shelter",
-            "severity": "high",
-            "llmRationale": "Volunteers and pets each belong to exactly one shelter, so cross-shelter care assignments indicate broken relationship semantics.",
-            "sql": """
-                SELECT c.assignment_id, c.volunteer_id, v.shelter_id AS volunteer_shelter_id, c.pet_id, p.shelter_id AS pet_shelter_id
-                FROM CARE_ASSIGNMENT c
-                JOIN VOLUNTEER v ON c.volunteer_id = v.volunteer_id
-                JOIN PET p ON c.pet_id = p.pet_id
-                WHERE v.shelter_id != p.shelter_id
-            """,
-            "refinement": "Care assignment creation now requires the volunteer and pet to belong to the same shelter, and shelter edits cannot retroactively break existing assignments.",
-        },
-        {
-            "id": "care_assignment_before_volunteer_join",
-            "title": "Care assignment cannot predate volunteer join date",
-            "severity": "medium",
-            "llmRationale": "Assignments before a volunteer officially joins the shelter are timeline anomalies.",
-            "sql": """
-                SELECT c.assignment_id, c.assignment_date, v.volunteer_id, v.join_date
-                FROM CARE_ASSIGNMENT c
-                JOIN VOLUNTEER v ON c.volunteer_id = v.volunteer_id
-                WHERE v.join_date IS NOT NULL
-                  AND date(c.assignment_date) < date(v.join_date)
-            """,
-            "refinement": "Care assignment validation checks volunteer join date, and volunteer join-date edits cannot move later than existing assignments.",
-        },
-        {
-            "id": "duplicate_care_assignment_slot",
-            "title": "Duplicate volunteer-pet care slot",
-            "severity": "medium",
-            "llmRationale": "The optional stronger dependency in the ER design treats one volunteer-pet-date-shift slot as a single assignment.",
-            "sql": """
-                SELECT volunteer_id, pet_id, assignment_date, shift, COUNT(*) AS assignment_count
-                FROM CARE_ASSIGNMENT
-                GROUP BY volunteer_id, pet_id, assignment_date, shift
-                HAVING COUNT(*) > 1
-            """,
-            "refinement": "A unique index and CRUD validation prevent duplicate assignments for the same volunteer, pet, date, and shift.",
-        },
-        {
             "id": "multiple_approved_applications_for_one_pet",
             "title": "Only one application may be finally approved for a pet",
             "severity": "high",
@@ -1507,7 +1525,7 @@ def fetch_integrity_audit(conn: sqlite3.Connection) -> list[dict]:
                 GROUP BY pet_id
                 HAVING COUNT(*) > 1
             """,
-            "refinement": "Approval checks for an existing approved application for the same pet inside a serialized write transaction.",
+            "refinement": "Approval now checks for an existing approved application for the same pet inside a serialized write transaction.",
         },
         {
             "id": "multiple_adoption_records_for_one_application",
@@ -1837,12 +1855,6 @@ def review_application(conn: sqlite3.Connection, application_id: int, payload: d
         )
 
     if decision == "Approved":
-        pet = ensure_exists(conn, "PET", "pet_id", app["pet_id"], "Pet")
-        if db_date(app["application_date"]) < db_date(pet["intake_date"]):
-            raise ApiError(
-                HTTPStatus.CONFLICT,
-                "Applications dated before pet intake cannot be approved.",
-            )
         other_approved = approved_application_for_pet(
             conn, app["pet_id"], exclude_application_id=application_id
         )
@@ -2309,7 +2321,7 @@ def approved_application_for_pet(
           {exclude_sql}
         ORDER BY date(COALESCE(ar.adoption_date, aa.reviewed_date, aa.application_date)) DESC
         LIMIT 1
-        """,
+        """.format(exclude_sql=exclude_sql),
         params,
     ).fetchone()
 
@@ -2327,82 +2339,79 @@ def pending_application_for_pet(conn: sqlite3.Connection, pet_id: int) -> sqlite
     ).fetchone()
 
 
-def assert_unique_care_assignment_slot(
-    conn: sqlite3.Connection,
-    volunteer_id: int,
-    pet_id: int,
-    assignment_date: str,
-    shift: str,
-    item_id: int | None = None,
-) -> None:
-    params: list[Any] = [volunteer_id, pet_id, assignment_date, shift]
-    exclude_sql = ""
-    if item_id is not None:
-        exclude_sql = "AND assignment_id != ?"
-        params.append(item_id)
-    row = conn.execute(
-        f"""
-        SELECT assignment_id
-        FROM CARE_ASSIGNMENT
-        WHERE volunteer_id = ?
-          AND pet_id = ?
-          AND assignment_date = ?
-          AND shift = ?
-          {exclude_sql}
-        LIMIT 1
-        """,
-        params,
-    ).fetchone()
-    if row:
-        raise ApiError(
-            HTTPStatus.CONFLICT,
-            f"Duplicate care assignment slot already exists ({display_id('CA', row['assignment_id'])}).",
-        )
-
-
 def assert_pet_intake_not_after_related_records(
     conn: sqlite3.Connection, pet_id: int, intake_date: str
 ) -> None:
-    checks = [
-        ("application", "ADOPTION_APPLICATION", "application_date", "pet_id"),
-        ("medical visit", "MEDICAL_RECORD", "visit_date", "pet_id"),
-        ("vaccination", "VACCINATION", "vaccination_date", "pet_id"),
-        ("care assignment", "CARE_ASSIGNMENT", "assignment_date", "pet_id"),
-    ]
-    for label, table, date_column, pet_column in checks:
-        row = conn.execute(
-            f"""
-            SELECT {date_column} AS event_date
-            FROM {table}
-            WHERE {pet_column} = ?
-              AND date({date_column}) < date(?)
-            ORDER BY date({date_column})
-            LIMIT 1
-            """,
-            (pet_id, intake_date),
-        ).fetchone()
-        if row:
-            raise ApiError(
-                HTTPStatus.CONFLICT,
-                f"Pet intake date cannot be later than an existing {label} on {row['event_date']}.",
-            )
+    issue = conn.execute(
+        """
+        SELECT issue, event_date
+        FROM (
+            SELECT 'application' AS issue, application_date AS event_date
+            FROM ADOPTION_APPLICATION
+            WHERE pet_id = ?
+              AND date(application_date) < date(?)
+            UNION ALL
+            SELECT 'adoption' AS issue, ar.adoption_date AS event_date
+            FROM ADOPTION_RECORD ar
+            JOIN ADOPTION_APPLICATION aa ON ar.application_id = aa.application_id
+            WHERE aa.pet_id = ?
+              AND date(ar.adoption_date) < date(?)
+            UNION ALL
+            SELECT 'medical visit' AS issue, visit_date AS event_date
+            FROM MEDICAL_RECORD
+            WHERE pet_id = ?
+              AND date(visit_date) < date(?)
+            UNION ALL
+            SELECT 'vaccination' AS issue, vaccination_date AS event_date
+            FROM VACCINATION
+            WHERE pet_id = ?
+              AND date(vaccination_date) < date(?)
+            UNION ALL
+            SELECT 'care assignment' AS issue, assignment_date AS event_date
+            FROM CARE_ASSIGNMENT
+            WHERE pet_id = ?
+              AND date(assignment_date) < date(?)
+        )
+        ORDER BY date(event_date)
+        LIMIT 1
+        """,
+        (
+            pet_id,
+            intake_date,
+            pet_id,
+            intake_date,
+            pet_id,
+            intake_date,
+            pet_id,
+            intake_date,
+            pet_id,
+            intake_date,
+        ),
+    ).fetchone()
+    if issue:
+        raise ApiError(
+            HTTPStatus.CONFLICT,
+            f"Pet intake date cannot be later than an existing {issue['issue']} on {issue['event_date']}.",
+        )
 
 
 def assert_pet_shelter_consistency_for_assignments(
     conn: sqlite3.Connection, pet_id: int, shelter_id: int
 ) -> None:
-    row = conn.execute(
+    conflict = conn.execute(
         """
-        SELECT c.assignment_id
+        SELECT c.assignment_id, v.full_name, s.name AS volunteer_shelter
         FROM CARE_ASSIGNMENT c
         JOIN VOLUNTEER v ON c.volunteer_id = v.volunteer_id
+        JOIN SHELTER s ON v.shelter_id = s.shelter_id
         WHERE c.pet_id = ?
           AND v.shelter_id != ?
+        ORDER BY c.assignment_date DESC, c.assignment_id DESC
         LIMIT 1
         """,
         (pet_id, shelter_id),
     ).fetchone()
-    if row:
+    if conflict:
         raise ApiError(
             HTTPStatus.CONFLICT,
             "Pet shelter cannot be changed because existing care assignments would become cross-shelter.",
@@ -2412,7 +2421,7 @@ def assert_pet_shelter_consistency_for_assignments(
 def assert_volunteer_join_date_not_after_assignments(
     conn: sqlite3.Connection, volunteer_id: int, join_date: str
 ) -> None:
-    row = conn.execute(
+    issue = conn.execute(
         """
         SELECT assignment_id, assignment_date
         FROM CARE_ASSIGNMENT
@@ -2423,32 +2432,99 @@ def assert_volunteer_join_date_not_after_assignments(
         """,
         (volunteer_id, join_date),
     ).fetchone()
-    if row:
+    if issue:
         raise ApiError(
             HTTPStatus.CONFLICT,
-            f"Volunteer join date cannot be later than existing care assignment {display_id('CA', row['assignment_id'])} on {row['assignment_date']}.",
+            f"Volunteer join date cannot be later than care assignment {display_id('CA', issue['assignment_id'])} on {issue['assignment_date']}.",
         )
 
 
 def assert_volunteer_shelter_consistency_for_assignments(
     conn: sqlite3.Connection, volunteer_id: int, shelter_id: int
 ) -> None:
-    row = conn.execute(
+    conflict = conn.execute(
         """
-        SELECT c.assignment_id
+        SELECT c.assignment_id, p.name AS pet_name, s.name AS pet_shelter
         FROM CARE_ASSIGNMENT c
         JOIN PET p ON c.pet_id = p.pet_id
+        JOIN SHELTER s ON p.shelter_id = s.shelter_id
         WHERE c.volunteer_id = ?
           AND p.shelter_id != ?
+        ORDER BY c.assignment_date DESC, c.assignment_id DESC
         LIMIT 1
         """,
         (volunteer_id, shelter_id),
     ).fetchone()
-    if row:
+    if conflict:
         raise ApiError(
             HTTPStatus.CONFLICT,
             "Volunteer shelter cannot be changed because existing care assignments would become cross-shelter.",
         )
+
+
+def assert_resource_deletable(conn: sqlite3.Connection, resource: str, item_id: int) -> None:
+    if resource == "shelters":
+        pet_count = conn.execute(
+            "SELECT COUNT(*) AS count FROM PET WHERE shelter_id = ?",
+            (item_id,),
+        ).fetchone()["count"]
+        volunteer_count = conn.execute(
+            "SELECT COUNT(*) AS count FROM VOLUNTEER WHERE shelter_id = ?",
+            (item_id,),
+        ).fetchone()["count"]
+        if pet_count or volunteer_count:
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "Shelters with linked pets or volunteers cannot be deleted.",
+            )
+
+    elif resource == "pets":
+        blockers = {
+            "applications": conn.execute(
+                "SELECT COUNT(*) AS count FROM ADOPTION_APPLICATION WHERE pet_id = ?",
+                (item_id,),
+            ).fetchone()["count"],
+            "medical records": conn.execute(
+                "SELECT COUNT(*) AS count FROM MEDICAL_RECORD WHERE pet_id = ?",
+                (item_id,),
+            ).fetchone()["count"],
+            "vaccinations": conn.execute(
+                "SELECT COUNT(*) AS count FROM VACCINATION WHERE pet_id = ?",
+                (item_id,),
+            ).fetchone()["count"],
+            "care assignments": conn.execute(
+                "SELECT COUNT(*) AS count FROM CARE_ASSIGNMENT WHERE pet_id = ?",
+                (item_id,),
+            ).fetchone()["count"],
+        }
+        active = [label for label, count in blockers.items() if count]
+        if active:
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                f"Pets with linked {', '.join(active)} cannot be deleted.",
+            )
+
+    elif resource == "applicants":
+        application_count = conn.execute(
+            "SELECT COUNT(*) AS count FROM ADOPTION_APPLICATION WHERE applicant_id = ?",
+            (item_id,),
+        ).fetchone()["count"]
+        if application_count:
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "Applicants with adoption applications cannot be deleted.",
+            )
+
+    elif resource == "volunteers":
+        assignment_count = conn.execute(
+            "SELECT COUNT(*) AS count FROM CARE_ASSIGNMENT WHERE volunteer_id = ?",
+            (item_id,),
+        ).fetchone()["count"]
+        if assignment_count:
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "Volunteers with care assignments cannot be deleted.",
+            )
 
 
 def validate_pet_status_workflow(
@@ -2528,8 +2604,6 @@ def validate_resource_rules(
     elif resource == "volunteers":
         ensure_exists(conn, "SHELTER", "shelter_id", values["shelter_id"], "Shelter")
         assert_unique_email(conn, "VOLUNTEER", "volunteer_id", values.get("email"), item_id, "Volunteer")
-        if values.get("join_date") and db_date(values["join_date"]) > date.today():
-            raise ApiError(HTTPStatus.BAD_REQUEST, "Volunteer join date cannot be in the future.")
         if item_id is not None:
             current_volunteer = ensure_exists(conn, "VOLUNTEER", "volunteer_id", item_id, "Volunteer")
             if values.get("join_date") and values["join_date"] != current_volunteer["join_date"]:
@@ -2553,16 +2627,6 @@ def validate_resource_rules(
                 HTTPStatus.BAD_REQUEST,
                 "Care assignment date cannot be before the volunteer join date.",
             )
-        if values["status"] == "Completed" and assignment_date > date.today():
-            raise ApiError(HTTPStatus.BAD_REQUEST, "Completed care assignments cannot be dated in the future.")
-        assert_unique_care_assignment_slot(
-            conn,
-            values["volunteer_id"],
-            values["pet_id"],
-            values["assignment_date"],
-            values["shift"],
-            item_id,
-        )
         approved = approved_application_for_pet(conn, values["pet_id"])
         if approved and values.get("status") != "Cancelled":
             adoption_date = db_date(approved["adoption_date"] or approved["reviewed_date"] or approved["application_date"])
