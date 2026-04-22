@@ -360,7 +360,7 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
         </select>
         <select id="pet-species-filter" onchange="filterPets()">
           <option value="">All species</option>
-          <option>Dog</option><option>Cat</option><option>Rabbit</option>
+          <option>Dog</option><option>Cat</option><option>Rabbit</option><option>Bird</option>
         </select>
       </div>
       <table><thead><tr><th>ID</th><th>Name</th><th>Species</th><th>Breed</th><th>Sex</th><th>Status</th><th>Intake date</th><th>Actions</th></tr></thead>
@@ -630,7 +630,7 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
       <label class="form-label">Housing type</label>
       <select class="form-control" id="form-housing">
         <option value="">Select housing type...</option>
-        <option>Apartment</option><option>Condo</option><option>House</option>
+        <option>Apartment</option><option>Condo</option><option>House</option><option>Townhouse</option>
         <option>House with garden</option>
         <option>House without garden</option><option>Shared housing</option>
       </select>
@@ -685,7 +685,7 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
     </div>
     <div class="form-group">
       <label class="form-label">Follow-up date</label>
-      <input class="form-control" type="date" id="followup-date">
+      <input class="form-control" type="text" inputmode="numeric" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" placeholder="YYYY-MM-DD" id="followup-date">
     </div>
     <div class="form-group">
       <label class="form-label">Follow-up type</label>
@@ -766,6 +766,21 @@ let dashboard = null;
 let reviewingIndex = -1;
 let crudContext = null;
 
+const defaultDomainOptions = {
+  petStatuses: ['Available','Reserved','Medical hold','Adopted'],
+  applicationStatuses: ['Pending','Approved','Rejected'],
+  species: ['Dog','Cat','Rabbit','Bird'],
+  sex: ['Male','Female','Unknown'],
+  housingTypes: ['Apartment','Condo','House','Townhouse','House with garden','House without garden','Shared housing'],
+  medicalRecordTypes: ['Check-up','Surgery','Treatment','Injury','Dental'],
+  careShifts: ['Morning','Afternoon','Evening'],
+  careTaskTypes: ['Cleaning','Feeding','Grooming','Socializing','Walking','Medical support'],
+  careStatuses: ['Scheduled','Completed','Cancelled'],
+  followupTypes: ['Phone Check','Home Visit','Vet Check'],
+  followupResultStatuses: ['Excellent','Good','Satisfactory','Needs Improvement']
+};
+let domainOptions = {...defaultDomainOptions};
+
 const crudConfigs = {
   'shelters': {
     label: 'Shelter',
@@ -787,9 +802,9 @@ const crudConfigs = {
     fields: [
       {name:'shelterId', label:'Shelter', type:'select', required:true, options: () => shelters.map(s => ({value:s.shelterId, label:`${s.id} - ${s.name}`}))},
       {name:'name', label:'Name', required:true},
-      {name:'species', label:'Species', type:'select', required:true, options: () => ['Dog','Cat','Rabbit','Bird'].map(v => ({value:v, label:v}))},
+      {name:'species', label:'Species', type:'select', required:true, options: () => optionObjects('species')},
       {name:'breed', label:'Breed'},
-      {name:'sex', label:'Sex', type:'select', options: () => ['Male','Female','Unknown'].map(v => ({value:v, label:v}))},
+      {name:'sex', label:'Sex', type:'select', options: () => optionObjects('sex')},
       {name:'color', label:'Color'},
       {name:'birth', label:'Estimated birth date', type:'date'},
       {name:'intake', label:'Intake date', type:'date', required:true, defaultValue: todayIso},
@@ -808,7 +823,7 @@ const crudConfigs = {
       {name:'phone', label:'Phone'},
       {name:'email', label:'Email', type:'email'},
       {name:'address', label:'Address', type:'textarea', wide:true},
-      {name:'housingType', label:'Housing type', type:'select', options: () => ['Apartment','Condo','House','Townhouse','House with garden','House without garden','Shared housing'].map(v => ({value:v, label:v}))},
+      {name:'housingType', label:'Housing type', type:'select', options: () => optionObjects('housingTypes')},
       {name:'hasPetExperience', label:'Has pet experience', type:'bool'},
       {name:'createdAt', label:'Created at', type:'date', defaultValue: todayIso}
     ]
@@ -821,7 +836,7 @@ const crudConfigs = {
     fields: [
       {name:'petId', label:'Pet', type:'select', required:true, options: petOptions},
       {name:'date', label:'Visit date', type:'date', required:true, defaultValue: todayIso},
-      {name:'type', label:'Record type', type:'select', options: () => ['Check-up','Surgery','Injury','Dental','Treatment'].map(v => ({value:v, label:v}))},
+      {name:'type', label:'Record type', type:'select', options: () => optionObjects('medicalRecordTypes')},
       {name:'vet', label:'Vet name'},
       {name:'diagnosis', label:'Diagnosis', type:'textarea', wide:true},
       {name:'treatment', label:'Treatment', type:'textarea', wide:true},
@@ -948,8 +963,67 @@ function entityCode(prefix, value) {
   return value ? `${prefix}-${String(value).padStart(3, '0')}` : '';
 }
 
+function optionValues(key) {
+  const values = domainOptions[key] || defaultDomainOptions[key] || [];
+  return Array.isArray(values) ? values : [];
+}
+
+function optionObjects(key) {
+  return optionValues(key).map(value => ({value, label: value}));
+}
+
+function mergeOptionValues(key, observedValues=[]) {
+  const merged = [...optionValues(key)];
+  observedValues.filter(Boolean).forEach(value => {
+    if (!merged.includes(value)) merged.push(value);
+  });
+  return merged;
+}
+
+function populateSelect(id, placeholder, values) {
+  const select = document.getElementById(id);
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = `<option value="">${escapeHtml(placeholder)}</option>` +
+    values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+  select.value = values.includes(current) ? current : '';
+}
+
+function applyDomainSelectOptions() {
+  populateSelect('pet-status-filter', 'All statuses', optionValues('petStatuses'));
+  populateSelect('app-status-filter', 'All statuses', optionValues('applicationStatuses'));
+  populateSelect('form-housing', 'Select housing type...', mergeOptionValues('housingTypes', applicants.map(a => a.housingType)));
+  populateSelect('followup-type', 'Select type...', optionValues('followupTypes'));
+  populateSelect('followup-result', 'Select result...', optionValues('followupResultStatuses'));
+}
+
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isIsoDate(value) {
+  if (!value) return true;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const [, year, month, day] = match;
+  const parsed = new Date(`${value}T00:00:00`);
+  return !Number.isNaN(parsed.getTime())
+    && parsed.getFullYear() === Number(year)
+    && parsed.getMonth() + 1 === Number(month)
+    && parsed.getDate() === Number(day);
+}
+
+function clientValidateDateFields(config, payload) {
+  for (const field of config.fields) {
+    if (field.type === 'date' && payload[field.name] && !isIsoDate(payload[field.name])) {
+      return `${field.label} must use YYYY-MM-DD.`;
+    }
+  }
+  return null;
 }
 
 function petOptions() {
@@ -1184,6 +1258,53 @@ function clientDeleteGuard(resource, id) {
   return null;
 }
 
+function petById(id) {
+  return pets.find(p => Number(p.petId) === Number(id));
+}
+
+function volunteerById(id) {
+  return volunteers.find(v => Number(v.volunteerId) === Number(id));
+}
+
+function approvedApplicationsForPet(petId, excludeApplicationId=null) {
+  return apps.filter(a =>
+    Number(a.petId) === Number(petId)
+    && a.status === 'Approved'
+    && Number(a.applicationId) !== Number(excludeApplicationId)
+  );
+}
+
+function pendingApplicationsForPet(petId, excludeApplicationId=null) {
+  return apps.filter(a =>
+    Number(a.petId) === Number(petId)
+    && a.status === 'Pending'
+    && Number(a.applicationId) !== Number(excludeApplicationId)
+  );
+}
+
+function earliestAdoptionDateForPet(petId) {
+  const dates = adoptionRecords
+    .filter(r => Number(r.petId) === Number(petId) && r.adoptionDate)
+    .map(r => r.adoptionDate)
+    .sort();
+  return dates[0] || '';
+}
+
+function duplicateEmail(items, idField, currentId, email) {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return items.some(item =>
+    Number(item[idField]) !== Number(currentId)
+    && (item.email || '').trim().toLowerCase() === normalized
+  );
+}
+
+function firstDateConflict(entries, limitDate) {
+  return entries
+    .filter(([, value]) => value && value < limitDate)
+    .sort((a, b) => a[1].localeCompare(b[1]))[0] || null;
+}
+
 function actionButtons(resource, id, includeView=false) {
   const viewButton = includeView ? `<button class="btn-sm" onclick="openPetDetailById(${id})">View</button>` : '';
   return `<div class="action-row">
@@ -1279,6 +1400,200 @@ function readCrudPayload() {
   return payload;
 }
 
+function clientValidateCrudPayload(resource, payload) {
+  const editingId = crudContext?.mode === 'edit' ? Number(crudContext.id) : null;
+
+  if (resource === 'shelters' && editingId != null) {
+    const activePets = pets.filter(p =>
+      Number(p.shelterId) === editingId
+      && ['Available', 'Reserved', 'Medical hold'].includes(p.status)
+    ).length;
+    if (payload.capacity != null && Number(payload.capacity) < activePets) {
+      return 'Shelter capacity cannot be lower than its active pet count.';
+    }
+  }
+
+  if (resource === 'pets') {
+    if (payload.birth && payload.intake && payload.birth > payload.intake) {
+      return 'Estimated birth date cannot be after intake date.';
+    }
+    if (payload.intake && payload.intake > todayIso()) {
+      return 'Pet intake date cannot be in the future.';
+    }
+    if (editingId == null) {
+      if (payload.status === 'Reserved' || payload.status === 'Adopted') {
+        return 'New pets can start only as Available or Medical hold.';
+      }
+      return null;
+    }
+    const pending = pendingApplicationsForPet(editingId).length > 0;
+    const approved = approvedApplicationsForPet(editingId).length > 0;
+    if (pending && payload.status !== 'Reserved') {
+      return 'A pet with a pending application must stay Reserved.';
+    }
+    if (!pending && approved && payload.status !== 'Adopted') {
+      return 'A pet with an approved adoption must stay Adopted.';
+    }
+    if (!pending && !approved && (payload.status === 'Reserved' || payload.status === 'Adopted')) {
+      return 'Reserved and Adopted statuses must come from the adoption workflow, not direct edits.';
+    }
+    if (payload.intake) {
+      const relatedConflict = firstDateConflict([
+        ...apps.filter(a => Number(a.petId) === editingId).map(a => ['application', a.date]),
+        ...adoptionRecords.filter(r => Number(r.petId) === editingId).map(r => ['adoption', r.adoptionDate]),
+        ...medicalRecords.filter(r => Number(r.petId) === editingId).map(r => ['medical visit', r.date]),
+        ...vaccinations.filter(v => Number(v.petId) === editingId).map(v => ['vaccination', v.vaccinationDate]),
+        ...careAssignments.filter(c => Number(c.petId) === editingId).map(c => ['care assignment', c.date])
+      ], payload.intake);
+      if (relatedConflict) {
+        return `Pet intake date cannot be later than an existing ${relatedConflict[0]} on ${relatedConflict[1]}.`;
+      }
+    }
+    if (payload.shelterId) {
+      const conflictingAssignment = careAssignments.find(c =>
+        Number(c.petId) === editingId
+        && Number(volunteerById(c.volunteerId)?.shelterId) !== Number(payload.shelterId)
+      );
+      if (conflictingAssignment) {
+        return 'Pet shelter cannot be changed because existing care assignments would become cross-shelter.';
+      }
+    }
+  }
+
+  if (resource === 'applicants') {
+    if (duplicateEmail(applicants, 'applicantId', editingId, payload.email)) {
+      return 'Applicant email already exists.';
+    }
+    if (payload.createdAt && payload.createdAt > todayIso()) {
+      return 'Applicant created date cannot be in the future.';
+    }
+  }
+
+  if (resource === 'medical-records') {
+    const pet = petById(payload.petId);
+    if (payload.date && payload.date > todayIso()) {
+      return 'Medical visit date cannot be in the future.';
+    }
+    if (pet && payload.date && pet.intake && payload.date < pet.intake) {
+      return 'Medical visit date cannot be before pet intake date.';
+    }
+  }
+
+  if (resource === 'vaccinations') {
+    const pet = petById(payload.petId);
+    if (payload.vaccinationDate && payload.vaccinationDate > todayIso()) {
+      return 'Vaccination date cannot be in the future.';
+    }
+    if (pet && payload.vaccinationDate && pet.intake && payload.vaccinationDate < pet.intake) {
+      return 'Vaccination date cannot be before pet intake date.';
+    }
+    if (payload.dueDate && payload.vaccinationDate && payload.dueDate < payload.vaccinationDate) {
+      return 'Next due date cannot be before vaccination date.';
+    }
+  }
+
+  if (resource === 'volunteers') {
+    if (duplicateEmail(volunteers, 'volunteerId', editingId, payload.email)) {
+      return 'Volunteer email already exists.';
+    }
+    if (payload.joined && payload.joined > todayIso()) {
+      return 'Volunteer join date cannot be in the future.';
+    }
+    if (editingId != null && payload.joined) {
+      const earlyAssignment = firstDateConflict(
+        careAssignments
+          .filter(c => Number(c.volunteerId) === editingId)
+          .map(c => ['care assignment', c.date]),
+        payload.joined
+      );
+      if (earlyAssignment) {
+        return `Volunteer join date cannot be later than existing ${earlyAssignment[0]} on ${earlyAssignment[1]}.`;
+      }
+    }
+    if (editingId != null && payload.shelterId) {
+      const conflictingAssignment = careAssignments.find(c =>
+        Number(c.volunteerId) === editingId
+        && Number(petById(c.petId)?.shelterId) !== Number(payload.shelterId)
+      );
+      if (conflictingAssignment) {
+        return 'Volunteer shelter cannot be changed because existing care assignments would become cross-shelter.';
+      }
+    }
+  }
+
+  if (resource === 'care-assignments') {
+    const volunteer = volunteerById(payload.volunteerId);
+    const pet = petById(payload.petId);
+    if (volunteer && pet && Number(volunteer.shelterId) !== Number(pet.shelterId)) {
+      return 'Volunteer and pet must belong to the same shelter for care assignments.';
+    }
+    if (pet && payload.date && pet.intake && payload.date < pet.intake) {
+      return 'Care assignment date cannot be before pet intake date.';
+    }
+    if (volunteer && payload.date && volunteer.joined && payload.date < volunteer.joined) {
+      return 'Care assignment date cannot be before the volunteer join date.';
+    }
+    if (payload.status === 'Completed' && payload.date && payload.date > todayIso()) {
+      return 'Completed care assignments cannot be dated in the future.';
+    }
+    const duplicateSlot = careAssignments.find(c =>
+      Number(c.assignmentId) !== Number(editingId)
+      && Number(c.volunteerId) === Number(payload.volunteerId)
+      && Number(c.petId) === Number(payload.petId)
+      && c.date === payload.date
+      && c.shift === payload.shift
+    );
+    if (duplicateSlot) {
+      return `Duplicate care assignment slot already exists (${duplicateSlot.id}).`;
+    }
+    const adoptionDate = earliestAdoptionDateForPet(payload.petId);
+    if (adoptionDate && payload.date && payload.date >= adoptionDate && payload.status !== 'Cancelled') {
+      return 'Adopted pets cannot receive scheduled care assignments on or after adoption date.';
+    }
+  }
+
+  if (resource === 'follow-ups') {
+    const adoption = adoptionRecords.find(r => Number(r.adoptionId) === Number(payload.adoptionId));
+    if (payload.followupDate && payload.followupDate > todayIso()) {
+      return 'Follow-up date cannot be in the future.';
+    }
+    if (adoption && payload.followupDate && adoption.adoptionDate && payload.followupDate < adoption.adoptionDate) {
+      return 'Follow-up date cannot be before adoption date.';
+    }
+  }
+
+  return null;
+}
+
+function clientDeleteGuard(resource, id) {
+  if (resource === 'shelters') {
+    if (pets.some(p => Number(p.shelterId) === Number(id)) || volunteers.some(v => Number(v.shelterId) === Number(id))) {
+      return 'Shelters with linked pets or volunteers cannot be deleted.';
+    }
+  }
+  if (resource === 'applicants') {
+    if (apps.some(a => Number(a.applicantId) === Number(id))) {
+      return 'Applicants with adoption applications cannot be deleted.';
+    }
+  }
+  if (resource === 'pets') {
+    if (
+      apps.some(a => Number(a.petId) === Number(id))
+      || medicalRecords.some(r => Number(r.petId) === Number(id))
+      || vaccinations.some(v => Number(v.petId) === Number(id))
+      || careAssignments.some(c => Number(c.petId) === Number(id))
+    ) {
+      return 'Pets with linked applications, medical records, vaccinations, or care assignments cannot be deleted.';
+    }
+  }
+  if (resource === 'volunteers') {
+    if (careAssignments.some(c => Number(c.volunteerId) === Number(id))) {
+      return 'Volunteers with care assignments cannot be deleted.';
+    }
+  }
+  return null;
+}
+
 async function submitCrudForm() {
   if (!crudContext) return;
   const config = crudConfigs[crudContext.resource];
@@ -1333,7 +1648,8 @@ async function loadData() {
     volunteerData,
     assignmentData,
     analyticsData,
-    llmBonusData
+    llmBonusData,
+    optionsData
   ] = await Promise.all([
     apiRequest('/api/dashboard'),
     apiRequest('/api/shelters'),
@@ -1347,7 +1663,8 @@ async function loadData() {
     apiRequest('/api/volunteers'),
     apiRequest('/api/care-assignments'),
     apiRequest('/api/analytics'),
-    apiRequest('/api/llm-bonus')
+    apiRequest('/api/llm-bonus'),
+    apiRequest('/api/options')
   ]);
 
   dashboard = dashboardData;
@@ -1363,7 +1680,9 @@ async function loadData() {
   careAssignments = assignmentData.careAssignments || [];
   analytics = analyticsData;
   llmBonus = llmBonusData;
+  domainOptions = {...defaultDomainOptions, ...(optionsData.options || {})};
 
+  applyDomainSelectOptions();
   populateSpeciesFilter();
   renderDashboard();
   renderShelters();
@@ -1497,7 +1816,7 @@ function renderAdoptions() {
 function populateSpeciesFilter() {
   const sel = document.getElementById('pet-species-filter');
   const current = sel.value;
-  const species = [...new Set(pets.map(p => p.species).filter(Boolean))].sort();
+  const species = mergeOptionValues('species', pets.map(p => p.species));
   sel.innerHTML = '<option value="">All species</option>' + species.map(s => `<option>${escapeHtml(s)}</option>`).join('');
   sel.value = species.includes(current) ? current : '';
 }
@@ -1631,6 +1950,11 @@ async function submitReview(decision) {
     }
   }
   const feeText = document.getElementById('review-fee').value.trim();
+  const finalFee = feeText ? Number(feeText) : null;
+  if (finalFee != null && (!Number.isFinite(finalFee) || finalFee < 0)) {
+    showToast('Final adoption fee must be a non-negative finite number.', 'error');
+    return;
+  }
   const handoverNote = document.getElementById('review-handover').value.trim();
   try {
     await apiRequest(`/api/applications/${a.applicationId}/review`, {
@@ -1639,7 +1963,7 @@ async function submitReview(decision) {
         decision,
         note,
         reviewerName: 'Staff (you)',
-        finalAdoptionFee: feeText ? Number(feeText) : null,
+        finalAdoptionFee: finalFee,
         handoverNote
       }
     });
@@ -1653,6 +1977,7 @@ async function submitReview(decision) {
 }
 
 function openNewAppModal() {
+  applyDomainSelectOptions();
   const applicantSel = document.getElementById('form-applicant');
   applicantSel.innerHTML = '<option value="">Select an applicant...</option>';
   applicants.forEach(a => {
@@ -1708,6 +2033,7 @@ async function submitNewApp() {
 }
 
 function openNewFollowupModal() {
+  applyDomainSelectOptions();
   const adoptionSel = document.getElementById('followup-adoption');
   adoptionSel.innerHTML = '<option value="">Select an adoption...</option>';
   adoptionRecords.forEach(record => {
@@ -1716,7 +2042,7 @@ function openNewFollowupModal() {
     o.value = record.adoptionId;
     adoptionSel.appendChild(o);
   });
-  document.getElementById('followup-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('followup-date').value = todayIso();
   document.getElementById('followup-type').value = '';
   document.getElementById('followup-condition').value = '';
   document.getElementById('followup-feedback').value = '';
@@ -1733,6 +2059,14 @@ async function submitFollowup() {
   const adopterFeedback = document.getElementById('followup-feedback').value.trim();
   const resultStatus = document.getElementById('followup-result').value;
   const staffNote = document.getElementById('followup-note').value.trim();
+  if (followupDate && !isIsoDate(followupDate)) {
+    showToast('Follow-up date must use YYYY-MM-DD.', 'error');
+    return;
+  }
+  if (followupDate && followupDate > todayIso()) {
+    showToast('Follow-up date cannot be in the future.', 'error');
+    return;
+  }
   if (!adoptionId || !followupDate || !followupType || !petCondition || !resultStatus) {
     showToast('Please fill in the required follow-up fields', 'info');
     return;
