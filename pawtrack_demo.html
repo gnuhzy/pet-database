@@ -55,7 +55,7 @@ html,body{height:100%;background:var(--color-background-tertiary)}
 body{font-family:var(--font-sans);color:var(--color-text-primary)}
 code{font-family:var(--font-mono);font-size:0.9em;background:var(--color-background-secondary);padding:1px 5px;border-radius:4px}
 .app{display:flex;height:100vh;overflow:hidden}
-.sidebar{width:210px;flex-shrink:0;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);padding:1.25rem 0;display:flex;flex-direction:column}
+.sidebar{width:210px;flex-shrink:0;background:var(--color-background-secondary);border-right:0.5px solid var(--color-border-tertiary);padding:1.25rem 0;display:flex;flex-direction:column;overflow-y:auto}
 .sidebar-logo{padding:0 1.25rem 1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:0.75rem}
 .sidebar-logo p{font-size:13px;color:var(--color-text-secondary);margin-top:2px}
 .sidebar-logo h2{font-size:15px;font-weight:500}
@@ -71,15 +71,18 @@ code{font-family:var(--font-mono);font-size:0.9em;background:var(--color-backgro
 .stat-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px}
 .stat-value{font-size:22px;font-weight:500}
 .stat-sub{font-size:12px;color:var(--color-text-secondary);margin-top:4px}
-.section-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1.25rem}
+.section-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1.25rem;overflow-x:auto}
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
 .section-title{font-size:14px;font-weight:500}
 .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
 .toolbar input,.toolbar select{font-size:13px;padding:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)}
 .toolbar input{min-width:190px}
 table{width:100%;border-collapse:collapse;font-size:13px}
+.section-card table{min-width:620px}
+.wide-table{min-width:980px}
 th{text-align:left;padding:8px 10px;font-weight:500;font-size:12px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
 td{padding:9px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle}
+.note-cell{max-width:260px;white-space:normal;line-height:1.45}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--color-background-secondary)}
 .badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500}
@@ -100,7 +103,16 @@ tr:hover td{background:var(--color-background-secondary)}
 .btn-reject:hover{background:#FCEBEB}
 .btn-primary{font-size:13px;padding:7px 14px;border:0.5px solid #BA7517;border-radius:var(--border-radius-md);background:transparent;color:#854F0B;cursor:pointer;font-weight:500}
 .btn-primary:hover{background:#FAEEDA}
+.action-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.form-grid .form-group-wide{grid-column:1/-1}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.analytics-wide{grid-column:1/-1}
+.bonus-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.bonus-wide{grid-column:1/-1}
+.muted-text{color:var(--color-text-secondary);font-size:12px;line-height:1.5}
+.sql-block{font-family:var(--font-mono);font-size:12px;white-space:pre-wrap;line-height:1.5;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;color:var(--color-text-primary)}
 .activity-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
 .activity-item:last-child{border-bottom:none}
 .activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
@@ -133,6 +145,7 @@ tr:hover td{background:var(--color-background-secondary)}
   position:relative;
   box-shadow:0 8px 32px rgba(0,0,0,0.18);
 }
+.modal-box-wide{width:620px}
 .modal-close{position:absolute;right:1rem;top:1rem;cursor:pointer;font-size:16px;color:var(--color-text-secondary);background:none;border:none}
 .modal-title{font-size:16px;font-weight:500;margin-bottom:1.25rem}
 .field-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px}
@@ -165,6 +178,12 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
 .toast.show{display:block}
 .toast-success{border-left:3px solid #639922;color:#3B6D11}
 .toast-info{border-left:3px solid #378ADD;color:#185FA5}
+.toast-error{border-left:3px solid #A32D2D;color:#A32D2D}
+@media (max-width: 900px) {
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .two-col,.analytics-grid,.bonus-grid{grid-template-columns:1fr}
+  .analytics-wide,.bonus-wide{grid-column:auto}
+}
 </style>
 </head>
 <body>
@@ -181,13 +200,25 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
     Dashboard
   </div>
+  <div class="nav-item" onclick="showPage('shelters',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 14V6l6-4 6 4v8" stroke="currentColor" stroke-width="1.2"/><path d="M6 14V9h4v5" stroke="currentColor" stroke-width="1.2"/><path d="M4 7.5h8" stroke="currentColor" stroke-width="1.2"/></svg>
+    Shelters
+  </div>
   <div class="nav-item" onclick="showPage('pets',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.2"/><circle cx="3" cy="4" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="13" cy="4" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 12c0-2 2-3 6-3s6 1 6 3" stroke="currentColor" stroke-width="1.2"/></svg>
     Pets
   </div>
+  <div class="nav-item" onclick="showPage('applicants',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2.5 14c.6-3.2 2.5-5 5.5-5s4.9 1.8 5.5 5" stroke="currentColor" stroke-width="1.2"/></svg>
+    Applicants
+  </div>
   <div class="nav-item" onclick="showPage('applications',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="5" x2="11" y2="5" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="11" x2="8" y2="11" stroke="currentColor" stroke-width="1.2"/></svg>
     Applications
+  </div>
+  <div class="nav-item" onclick="showPage('adoptions',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3L13 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
+    Adoptions
   </div>
   <div class="nav-item" onclick="showPage('medical',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 3V2M11 3V2" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="9" x2="8" y2="12" stroke="currentColor" stroke-width="1.2"/><line x1="6.5" y1="10.5" x2="9.5" y2="10.5" stroke="currentColor" stroke-width="1.2"/></svg>
@@ -196,6 +227,14 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
   <div class="nav-item" onclick="showPage('volunteers',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 13c0-2.5 2-4 5-4s5 1.5 5 4" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M12 9c2 0 3 1 3 2.5" stroke="currentColor" stroke-width="1.2"/></svg>
     Volunteers
+  </div>
+  <div class="nav-item" onclick="showPage('analytics',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 13.5h12" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="7" width="2.5" height="5" rx=".7" stroke="currentColor" stroke-width="1.2"/><rect x="7" y="4" width="2.5" height="8" rx=".7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="2.5" height="10" rx=".7" stroke="currentColor" stroke-width="1.2"/></svg>
+    Analytics
+  </div>
+  <div class="nav-item" onclick="showPage('llm',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 12v2M11 12v2M5.5 6.5h.01M10.5 6.5h.01M6 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    LLM Bonus
   </div>
 </nav>
 
@@ -206,30 +245,37 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
   <div id="page-dashboard" class="page active">
     <div class="page-title">Dashboard</div>
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-label">Total pets</div><div class="stat-value">47</div><div class="stat-sub">in 2 shelters</div></div>
-      <div class="stat-card"><div class="stat-label">Available now</div><div class="stat-value" style="color:#3B6D11">23</div><div class="stat-sub">ready to adopt</div></div>
-      <div class="stat-card"><div class="stat-label">Pending review</div><div class="stat-value" style="color:#854F0B" id="dash-pending-count">3</div><div class="stat-sub">applications</div></div>
-      <div class="stat-card"><div class="stat-label">This month</div><div class="stat-value" style="color:#185FA5">12</div><div class="stat-sub">successful adoptions</div></div>
+      <div class="stat-card"><div class="stat-label">Total pets</div><div class="stat-value" id="dash-total-pets">--</div><div class="stat-sub" id="dash-shelter-count">loading shelters</div></div>
+      <div class="stat-card"><div class="stat-label">Available now</div><div class="stat-value" style="color:#3B6D11" id="dash-available-count">--</div><div class="stat-sub">ready to adopt</div></div>
+      <div class="stat-card"><div class="stat-label">Pending review</div><div class="stat-value" style="color:#854F0B" id="dash-pending-count">--</div><div class="stat-sub">applications</div></div>
+      <div class="stat-card"><div class="stat-label">This month</div><div class="stat-value" style="color:#185FA5" id="dash-monthly-adoptions">--</div><div class="stat-sub">successful adoptions</div></div>
     </div>
     <div class="two-col">
       <div class="section-card">
         <div class="section-header"><span class="section-title">Recent activity</span></div>
         <div id="activity-feed">
-          <div class="activity-item"><div class="activity-dot dot-green"></div><div><div class="activity-text">Buddy (Golden Retriever) adopted by Chen Wei</div><div class="activity-time">Today, 10:32 AM</div></div></div>
-          <div class="activity-item"><div class="activity-dot dot-amber"></div><div><div class="activity-text">New application for Mochi from Li Fang</div><div class="activity-time">Today, 9:14 AM</div></div></div>
-          <div class="activity-item"><div class="activity-dot dot-blue"></div><div><div class="activity-text">Vaccination record added for Snowball</div><div class="activity-time">Yesterday, 4:45 PM</div></div></div>
-          <div class="activity-item"><div class="activity-dot dot-green"></div><div><div class="activity-text">Follow-up completed for adopted cat Luna</div><div class="activity-time">Yesterday, 2:00 PM</div></div></div>
+          <div class="activity-item"><div class="activity-dot dot-blue"></div><div><div class="activity-text">Loading activity...</div><div class="activity-time">Backend API</div></div></div>
         </div>
       </div>
       <div class="section-card">
         <div class="section-header"><span class="section-title">Pet status overview</span></div>
-        <table><thead><tr><th>Status</th><th>Count</th><th>Share</th></tr></thead><tbody>
-          <tr><td><span class="badge badge-available">Available</span></td><td>23</td><td>49%</td></tr>
-          <tr><td><span class="badge badge-reserved">Reserved</span></td><td>11</td><td>23%</td></tr>
-          <tr><td><span class="badge badge-hold">Medical hold</span></td><td>5</td><td>11%</td></tr>
-          <tr><td><span class="badge badge-adopted">Adopted</span></td><td>8</td><td>17%</td></tr>
+        <table><thead><tr><th>Status</th><th>Count</th><th>Share</th></tr></thead><tbody id="status-overview-tbody">
+          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading status overview...</td></tr>
         </tbody></table>
       </div>
+    </div>
+  </div>
+
+  <!-- Shelters -->
+  <div id="page-shelters" class="page">
+    <div class="page-title">Shelters</div>
+    <div class="section-card">
+      <div class="section-header"><span class="section-title">Shelter directory</span><button class="btn-primary" onclick="openCrudModal('shelters','create')">+ New shelter</button></div>
+      <table class="wide-table"><thead><tr><th>ID</th><th>Name</th><th>Address</th><th>Phone</th><th>Capacity</th><th>Current pets</th><th>Volunteers</th><th>Occupancy</th><th>Actions</th></tr></thead>
+        <tbody id="shelter-tbody">
+          <tr><td colspan="9" style="color:var(--color-text-secondary)">Loading shelters...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -237,6 +283,7 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
   <div id="page-pets" class="page">
     <div class="page-title">Pet management</div>
     <div class="section-card">
+      <div class="section-header"><span class="section-title">Pet directory</span><button class="btn-primary" onclick="openCrudModal('pets','create')">+ New pet</button></div>
       <div class="toolbar">
         <input type="text" id="pet-search" placeholder="Search by name or breed..." oninput="filterPets()">
         <select id="pet-status-filter" onchange="filterPets()">
@@ -249,8 +296,29 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
           <option>Dog</option><option>Cat</option><option>Rabbit</option>
         </select>
       </div>
-      <table><thead><tr><th>ID</th><th>Name</th><th>Species</th><th>Breed</th><th>Sex</th><th>Status</th><th>Intake date</th><th></th></tr></thead>
+      <table><thead><tr><th>ID</th><th>Name</th><th>Species</th><th>Breed</th><th>Sex</th><th>Status</th><th>Intake date</th><th>Actions</th></tr></thead>
         <tbody id="pet-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Applicants -->
+  <div id="page-applicants" class="page">
+    <div class="page-title">Applicants</div>
+    <div class="section-card">
+      <div class="section-header"><span class="section-title">Applicant directory</span><button class="btn-primary" onclick="openCrudModal('applicants','create')">+ New applicant</button></div>
+      <div class="toolbar">
+        <input type="text" id="applicant-search" placeholder="Search applicants..." oninput="filterApplicants()">
+        <select id="applicant-experience-filter" onchange="filterApplicants()">
+          <option value="">All experience</option>
+          <option value="yes">Has pet experience</option>
+          <option value="no">No pet experience</option>
+        </select>
+      </div>
+      <table class="wide-table"><thead><tr><th>ID</th><th>Full name</th><th>Phone</th><th>Email</th><th>Address</th><th>Housing</th><th>Experience</th><th>Created at</th><th>Actions</th></tr></thead>
+        <tbody id="applicant-tbody">
+          <tr><td colspan="9" style="color:var(--color-text-secondary)">Loading applicants...</td></tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -276,28 +344,44 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
     </div>
   </div>
 
+  <!-- Adoptions -->
+  <div id="page-adoptions" class="page">
+    <div class="page-title">Adoption records &amp; follow-ups</div>
+    <div class="section-card">
+      <div class="section-header"><span class="section-title">Adoption records</span></div>
+      <table class="wide-table"><thead><tr><th>ID</th><th>Application</th><th>Applicant</th><th>Pet</th><th>Date</th><th>Final fee</th><th>Handover note</th><th>Follow-ups</th></tr></thead>
+        <tbody id="adoption-record-tbody">
+          <tr><td colspan="8" style="color:var(--color-text-secondary)">Loading adoption records...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">Follow-ups</span>
+        <button class="btn-primary" onclick="openNewFollowupModal()">+ New follow-up</button>
+      </div>
+      <table class="wide-table"><thead><tr><th>ID</th><th>Adoption</th><th>Date</th><th>Type</th><th>Pet condition</th><th>Adopter feedback</th><th>Result</th><th>Staff note</th><th>Actions</th></tr></thead>
+        <tbody id="followup-tbody">
+          <tr><td colspan="9" style="color:var(--color-text-secondary)">Loading follow-ups...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Medical -->
   <div id="page-medical" class="page">
     <div class="page-title">Medical records</div>
     <div class="two-col">
       <div class="section-card">
-        <div class="section-header"><span class="section-title">Medical visits</span></div>
-        <table><thead><tr><th>Pet</th><th>Date</th><th>Type</th><th>Vet</th></tr></thead><tbody>
-          <tr><td>Buddy</td><td>2026-03-10</td><td>Check-up</td><td>Dr. Wang</td></tr>
-          <tr><td>Mochi</td><td>2026-03-18</td><td>Sterilization</td><td>Dr. Li</td></tr>
-          <tr><td>Rex</td><td>2026-04-02</td><td>Injury</td><td>Dr. Wang</td></tr>
-          <tr><td>Snowball</td><td>2026-04-08</td><td>Check-up</td><td>Dr. Chen</td></tr>
-          <tr><td>Luna</td><td>2026-04-10</td><td>Surgery</td><td>Dr. Li</td></tr>
+        <div class="section-header"><span class="section-title">Medical visits</span><button class="btn-primary" onclick="openCrudModal('medical-records','create')">+ New visit</button></div>
+        <table class="wide-table"><thead><tr><th>ID</th><th>Pet</th><th>Visit date</th><th>Type</th><th>Diagnosis</th><th>Treatment</th><th>Vet</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="medical-tbody">
+          <tr><td colspan="9" style="color:var(--color-text-secondary)">Loading medical records...</td></tr>
         </tbody></table>
       </div>
       <div class="section-card">
-        <div class="section-header"><span class="section-title">Upcoming vaccinations</span></div>
-        <table><thead><tr><th>Pet</th><th>Vaccine</th><th>Due date</th></tr></thead><tbody>
-          <tr><td>Rex</td><td>Rabies</td><td style="color:#A32D2D">2026-04-15</td></tr>
-          <tr><td>Mochi</td><td>FVRCP</td><td style="color:#854F0B">2026-04-20</td></tr>
-          <tr><td>Buddy</td><td>DHPP</td><td>2026-05-01</td></tr>
-          <tr><td>Snowball</td><td>Bordetella</td><td>2026-05-10</td></tr>
-          <tr><td>Daisy</td><td>Rabies</td><td>2026-05-22</td></tr>
+        <div class="section-header"><span class="section-title">Vaccinations</span><button class="btn-primary" onclick="openCrudModal('vaccinations','create')">+ New vaccine</button></div>
+        <table class="wide-table"><thead><tr><th>ID</th><th>Pet</th><th>Vaccine</th><th>Dose</th><th>Vaccination date</th><th>Due date</th><th>Vet</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="vaccination-tbody">
+          <tr><td colspan="9" style="color:var(--color-text-secondary)">Loading vaccinations...</td></tr>
         </tbody></table>
       </div>
     </div>
@@ -307,23 +391,123 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
   <div id="page-volunteers" class="page">
     <div class="page-title">Volunteers &amp; care assignments</div>
     <div class="section-card">
-      <div class="section-header"><span class="section-title">Active volunteers</span></div>
-      <table><thead><tr><th>Volunteer</th><th>Email</th><th>Joined</th><th>Status</th><th>Assigned pets</th></tr></thead><tbody>
-        <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">ZS</div>Zhang San</div></td><td>zhangsan@example.com</td><td>2025-06-01</td><td><span class="badge badge-active">Active</span></td><td>Rex, Buddy</td></tr>
-        <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">LM</div>Li Ming</div></td><td>liming@example.com</td><td>2025-09-15</td><td><span class="badge badge-active">Active</span></td><td>Mochi</td></tr>
-        <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">WF</div>Wang Fang</div></td><td>wangfang@example.com</td><td>2026-01-08</td><td><span class="badge badge-active">Active</span></td><td>Snowball, Luna</td></tr>
-        <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">CJ</div>Chen Jie</div></td><td>chenjie@example.com</td><td>2026-02-20</td><td><span class="badge badge-inactive">Inactive</span></td><td>—</td></tr>
+      <div class="section-header"><span class="section-title">Active volunteers</span><button class="btn-primary" onclick="openCrudModal('volunteers','create')">+ New volunteer</button></div>
+      <table class="wide-table"><thead><tr><th>ID</th><th>Volunteer</th><th>Phone</th><th>Email</th><th>Shelter</th><th>Joined</th><th>Availability</th><th>Status</th><th>Assigned pets</th><th>Actions</th></tr></thead><tbody id="volunteer-tbody">
+        <tr><td colspan="10" style="color:var(--color-text-secondary)">Loading volunteers...</td></tr>
       </tbody></table>
     </div>
     <div class="section-card">
-      <div class="section-header"><span class="section-title">Today's care assignments</span></div>
-      <table><thead><tr><th>ID</th><th>Volunteer</th><th>Pet</th><th>Shift</th><th>Task</th><th>Status</th></tr></thead><tbody>
-        <tr><td>CA-001</td><td>Zhang San</td><td>Rex</td><td>Morning</td><td>Feeding &amp; walk</td><td><span class="badge badge-approved">Done</span></td></tr>
-        <tr><td>CA-002</td><td>Li Ming</td><td>Mochi</td><td>Morning</td><td>Grooming</td><td><span class="badge badge-approved">Done</span></td></tr>
-        <tr><td>CA-003</td><td>Zhang San</td><td>Buddy</td><td>Afternoon</td><td>Feeding &amp; walk</td><td><span class="badge badge-pending">Pending</span></td></tr>
-        <tr><td>CA-004</td><td>Wang Fang</td><td>Snowball</td><td>Afternoon</td><td>Medication</td><td><span class="badge badge-pending">Pending</span></td></tr>
-        <tr><td>CA-005</td><td>Wang Fang</td><td>Luna</td><td>Evening</td><td>Feeding</td><td><span class="badge badge-pending">Pending</span></td></tr>
+      <div class="section-header"><span class="section-title">Care assignments</span><button class="btn-primary" onclick="openCrudModal('care-assignments','create')">+ New assignment</button></div>
+      <table class="wide-table"><thead><tr><th>ID</th><th>Date</th><th>Volunteer</th><th>Pet</th><th>Shift</th><th>Task</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="care-tbody">
+        <tr><td colspan="9" style="color:var(--color-text-secondary)">Loading care assignments...</td></tr>
       </tbody></table>
+    </div>
+  </div>
+
+  <!-- Analytics -->
+  <div id="page-analytics" class="page">
+    <div class="page-title">Analytics</div>
+    <div class="analytics-grid">
+      <div class="section-card">
+        <div class="section-header"><span class="section-title">Shelter occupancy</span></div>
+        <table><thead><tr><th>Shelter</th><th>Pets</th><th>Capacity</th><th>Rate</th></tr></thead><tbody id="analytics-occupancy-tbody">
+          <tr><td colspan="4" style="color:var(--color-text-secondary)">Loading occupancy...</td></tr>
+        </tbody></table>
+      </div>
+      <div class="section-card">
+        <div class="section-header"><span class="section-title">Housing approval rate</span></div>
+        <table><thead><tr><th>Housing</th><th>Total</th><th>Approved</th><th>Rate</th></tr></thead><tbody id="analytics-housing-tbody">
+          <tr><td colspan="4" style="color:var(--color-text-secondary)">Loading approval rates...</td></tr>
+        </tbody></table>
+      </div>
+      <div class="section-card">
+        <div class="section-header"><span class="section-title">Adoption demand by species</span></div>
+        <table><thead><tr><th>Species</th><th>Applications</th><th>Adoptions</th><th>Success</th></tr></thead><tbody id="analytics-species-tbody">
+          <tr><td colspan="4" style="color:var(--color-text-secondary)">Loading demand...</td></tr>
+        </tbody></table>
+      </div>
+      <div class="section-card">
+        <div class="section-header"><span class="section-title">Follow-up outcomes</span></div>
+        <table><thead><tr><th>Result</th><th>Follow-ups</th></tr></thead><tbody id="analytics-followup-tbody">
+          <tr><td colspan="2" style="color:var(--color-text-secondary)">Loading outcomes...</td></tr>
+        </tbody></table>
+      </div>
+      <div class="section-card analytics-wide">
+        <div class="section-header"><span class="section-title">Long-stay available pets</span></div>
+        <table><thead><tr><th>ID</th><th>Name</th><th>Species</th><th>Breed</th><th>Intake date</th><th>Days</th></tr></thead><tbody id="analytics-longstay-tbody">
+          <tr><td colspan="6" style="color:var(--color-text-secondary)">Loading long-stay pets...</td></tr>
+        </tbody></table>
+      </div>
+      <div class="section-card analytics-wide">
+        <div class="section-header"><span class="section-title">Volunteer workload</span></div>
+        <table><thead><tr><th>Volunteer</th><th>Total</th><th>Completed</th><th>Scheduled</th><th>Cancelled</th></tr></thead><tbody id="analytics-workload-tbody">
+          <tr><td colspan="5" style="color:var(--color-text-secondary)">Loading workload...</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LLM Bonus -->
+  <div id="page-llm" class="page">
+    <div class="page-title">LLM + Database Bonus</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Architecture refinements</div><div class="stat-value" id="llm-refinement-count">--</div><div class="stat-sub">LLM-assisted improvements</div></div>
+      <div class="stat-card"><div class="stat-label">Integrity checks</div><div class="stat-value" id="llm-check-count">--</div><div class="stat-sub">schema and data audits</div></div>
+      <div class="stat-card"><div class="stat-label">Open findings</div><div class="stat-value" style="color:#854F0B" id="llm-finding-count">--</div><div class="stat-sub">records to review</div></div>
+      <div class="stat-card"><div class="stat-label">Safe queries</div><div class="stat-value" style="color:#185FA5" id="llm-query-count">--</div><div class="stat-sub">predefined SELECT tools</div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header"><span class="section-title">Natural language query assistant</span></div>
+      <div class="toolbar">
+        <input type="text" id="llm-prompt-input" placeholder="Ask: Which shelter is most occupied?" style="min-width:360px">
+        <button class="btn-primary" onclick="submitLlmPrompt()">Run safe query</button>
+      </div>
+      <div class="hint-box">
+        The assistant routes the prompt to a reviewed SQL template from <code>src/queries</code>. It does not execute arbitrary generated SQL.
+      </div>
+      <div id="llm-query-summary" class="review-summary" style="display:none"></div>
+      <div id="llm-query-sql" class="sql-block" style="display:none;margin-bottom:1rem"></div>
+      <table><thead id="llm-query-head"></thead><tbody id="llm-query-body">
+        <tr><td style="color:var(--color-text-secondary)">Try a prompt such as "show available pets" or "analyze volunteer workload".</td></tr>
+      </tbody></table>
+    </div>
+
+    <div class="bonus-grid">
+      <div class="section-card bonus-wide">
+        <div class="section-header"><span class="section-title">Architecture refinement: original vs LLM-assisted design</span></div>
+        <table><thead><tr><th>Area</th><th>Original design</th><th>Refinement</th><th>Implementation</th><th>Benefit</th></tr></thead><tbody id="llm-refinement-tbody">
+          <tr><td colspan="5" style="color:var(--color-text-secondary)">Loading refinements...</td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="section-card bonus-wide">
+        <div class="section-header"><span class="section-title">Integrity and anomaly audit</span></div>
+        <table><thead><tr><th>Check</th><th>Severity</th><th>Status</th><th>Findings</th><th>Refinement</th></tr></thead><tbody id="llm-audit-tbody">
+          <tr><td colspan="5" style="color:var(--color-text-secondary)">Loading integrity checks...</td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header"><span class="section-title">Refined constraints and indexes</span></div>
+        <table><thead><tr><th>Name</th><th>Suggested SQL</th><th>Reason</th></tr></thead><tbody id="llm-constraint-tbody">
+          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading constraints...</td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header"><span class="section-title">Prompt engineering patterns</span></div>
+        <table><thead><tr><th>Pattern</th><th>Prompt</th><th>Matched query</th></tr></thead><tbody id="llm-prompt-tbody">
+          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading prompt patterns...</td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="section-card bonus-wide">
+        <div class="section-header"><span class="section-title">LLM-safe query catalog</span></div>
+        <table><thead><tr><th>Name</th><th>Category</th><th>Read-only</th><th>Description</th></tr></thead><tbody id="llm-catalog-tbody">
+          <tr><td colspan="4" style="color:var(--color-text-secondary)">Loading query catalog...</td></tr>
+        </tbody></table>
+      </div>
     </div>
   </div>
 
@@ -356,10 +540,7 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
     <div class="form-group">
       <label class="form-label">Applicant</label>
       <select class="form-control" id="form-applicant">
-        <option value="">Select an applicant...</option>
-        <option>Chen Wei</option><option>Li Fang</option><option>Wang Hao</option>
-        <option>Zhang Ying</option><option>Liu Yang</option><option>Zhao Ming</option>
-        <option>Sun Jing</option><option>Wu Tao</option>
+        <option value="">Loading applicants...</option>
       </select>
     </div>
     <div class="form-group">
@@ -374,12 +555,13 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
       <label class="form-label">Housing type</label>
       <select class="form-control" id="form-housing">
         <option value="">Select housing type...</option>
-        <option>Apartment</option><option>House with garden</option>
+        <option>Apartment</option><option>Condo</option><option>House</option>
+        <option>House with garden</option>
         <option>House without garden</option><option>Shared housing</option>
       </select>
     </div>
     <div class="hint-box">
-      Submitting creates a new record in <code>ADOPTION_APPLICATION</code> with status set to <code>Pending</code>. The pet's status will be updated to <code>Reserved</code>.
+      Submitting creates a new record in <code>ADOPTION_APPLICATION</code> shown as <code>Pending</code>. The pet's status will be updated to <code>Reserved</code>.
     </div>
     <div class="form-actions">
       <button class="btn-sm" onclick="closeOverlay('new-app-overlay')">Cancel</button>
@@ -398,8 +580,16 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
       <label class="form-label">Decision note</label>
       <textarea class="form-control" id="review-note" placeholder="Enter your review comments..."></textarea>
     </div>
+    <div class="form-group">
+      <label class="form-label">Final adoption fee</label>
+      <input class="form-control" type="number" id="review-fee" min="0" step="0.01" placeholder="Used when approving">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Handover note</label>
+      <textarea class="form-control" id="review-handover" placeholder="Used when approving"></textarea>
+    </div>
     <div class="hint-box" style="margin-bottom:0">
-      This will execute: <code>UPDATE ADOPTION_APPLICATION SET status=?, reviewed_date=?, reviewer_name=?, decision_note=? WHERE application_id=?</code>
+      Approval creates the linked <code>ADOPTION_RECORD</code>; rejection only closes the application.
     </div>
     <div class="form-actions">
       <button class="btn-sm" onclick="closeOverlay('review-overlay')">Cancel</button>
@@ -409,36 +599,245 @@ textarea.form-control{resize:vertical;min-height:80px;line-height:1.5}
   </div>
 </div>
 
+<!-- ── New follow-up modal ── -->
+<div class="overlay" id="new-followup-overlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeOverlay('new-followup-overlay')">✕</button>
+    <div class="modal-title">New follow-up</div>
+    <div class="form-group">
+      <label class="form-label">Adoption record</label>
+      <select class="form-control" id="followup-adoption"><option value="">Select an adoption...</option></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Follow-up date</label>
+      <input class="form-control" type="date" id="followup-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Follow-up type</label>
+      <select class="form-control" id="followup-type">
+        <option value="">Select type...</option>
+        <option>Phone Check</option><option>Home Visit</option><option>Vet Check</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Pet condition</label>
+      <input class="form-control" id="followup-condition" placeholder="Stable, Improving, Needs attention...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Adopter feedback</label>
+      <textarea class="form-control" id="followup-feedback" placeholder="Feedback from adopter..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Result status</label>
+      <select class="form-control" id="followup-result">
+        <option value="">Select result...</option>
+        <option>Excellent</option><option>Good</option><option>Satisfactory</option><option>Needs Improvement</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Staff note</label>
+      <textarea class="form-control" id="followup-note" placeholder="Internal note..."></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-sm" onclick="closeOverlay('new-followup-overlay')">Cancel</button>
+      <button class="btn-primary" onclick="submitFollowup()">Save follow-up</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Generic entity CRUD modal ── -->
+<div class="overlay" id="crud-overlay">
+  <div class="modal-box modal-box-wide">
+    <button class="modal-close" onclick="closeOverlay('crud-overlay')">✕</button>
+    <div class="modal-title" id="crud-title"></div>
+    <div id="crud-fields" class="form-grid"></div>
+    <div class="form-actions">
+      <button class="btn-sm" onclick="closeOverlay('crud-overlay')">Cancel</button>
+      <button class="btn-primary" onclick="submitCrudForm()" id="crud-submit">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
 <script>
-const pets = [
-  {id:'P-001',name:'Buddy',species:'Dog',breed:'Golden Retriever',sex:'Male',color:'Golden',birth:'2022-03-15',intake:'2025-11-02',status:'Available',sterilized:'Yes',special:'None'},
-  {id:'P-002',name:'Mochi',species:'Cat',breed:'British Shorthair',sex:'Female',color:'Grey',birth:'2023-07-20',intake:'2026-01-10',status:'Reserved',sterilized:'Yes',special:'None'},
-  {id:'P-003',name:'Rex',species:'Dog',breed:'German Shepherd',sex:'Male',color:'Black & Tan',birth:'2021-09-05',intake:'2025-08-17',status:'Medical hold',sterilized:'No',special:'Injured paw'},
-  {id:'P-004',name:'Snowball',species:'Rabbit',breed:'Holland Lop',sex:'Female',color:'White',birth:'2024-02-11',intake:'2026-02-28',status:'Available',sterilized:'No',special:'None'},
-  {id:'P-005',name:'Luna',species:'Cat',breed:'Siamese',sex:'Female',color:'Cream & Brown',birth:'2022-11-30',intake:'2025-12-05',status:'Adopted',sterilized:'Yes',special:'None'},
-  {id:'P-006',name:'Daisy',species:'Dog',breed:'Beagle',sex:'Female',color:'Tri-color',birth:'2023-04-18',intake:'2026-03-01',status:'Available',sterilized:'Yes',special:'None'},
-  {id:'P-007',name:'Oreo',species:'Cat',breed:'Domestic Shorthair',sex:'Male',color:'Black & White',birth:'2024-01-09',intake:'2026-03-15',status:'Available',sterilized:'No',special:'None'},
-  {id:'P-008',name:'Max',species:'Dog',breed:'Labrador',sex:'Male',color:'Black',birth:'2022-06-22',intake:'2025-10-08',status:'Reserved',sterilized:'Yes',special:'None'},
-];
+const API_BASE = (() => {
+  if (window.PAWTRACK_API_BASE) return window.PAWTRACK_API_BASE;
+  const protocol = window.location.protocol;
+  const host = window.location.host;
+  const sameOriginApiHosts = new Set(['127.0.0.1:8000', 'localhost:8000']);
+  const isStandardWebOrigin = protocol === 'http:' || protocol === 'https:';
+  if (isStandardWebOrigin && sameOriginApiHosts.has(host)) {
+    return '';
+  }
+  return 'http://127.0.0.1:8000';
+})();
 
-let apps = [
-  {id:'APP-001',applicant:'Chen Wei',pet:'Buddy',date:'2026-03-20',status:'Approved',reviewer:'Staff A',reason:'Long-time dog lover, owns a house with garden.',decision:'Approved — ideal living conditions'},
-  {id:'APP-002',applicant:'Li Fang',pet:'Mochi',date:'2026-04-01',status:'Pending',reviewer:'—',reason:'First-time cat owner, works from home.',decision:'—'},
-  {id:'APP-003',applicant:'Wang Hao',pet:'Luna',date:'2026-02-14',status:'Approved',reviewer:'Staff B',reason:'Has two cats at home, experienced owner.',decision:'Approved — good match'},
-  {id:'APP-004',applicant:'Zhang Ying',pet:'Rex',date:'2026-04-05',status:'Pending',reviewer:'—',reason:'Wants a guard dog, has large yard.',decision:'—'},
-  {id:'APP-005',applicant:'Liu Yang',pet:'Daisy',date:'2026-04-08',status:'Pending',reviewer:'—',reason:'Family with two children, active lifestyle.',decision:'—'},
-  {id:'APP-006',applicant:'Zhao Ming',pet:'Max',date:'2026-03-28',status:'Rejected',reviewer:'Staff A',reason:'Apartment living, no outdoor space.',decision:'Rejected — not suitable for Labrador'},
-];
-
+let pets = [];
+let apps = [];
+let applicants = [];
+let shelters = [];
+let adoptionRecords = [];
+let followUps = [];
+let medicalRecords = [];
+let vaccinations = [];
+let volunteers = [];
+let careAssignments = [];
+let analytics = null;
+let llmBonus = null;
+let dashboard = null;
 let reviewingIndex = -1;
-let nextAppNum = 7;
+let crudContext = null;
+
+const crudConfigs = {
+  'shelters': {
+    label: 'Shelter',
+    endpoint: '/api/shelters',
+    idField: 'shelterId',
+    data: () => shelters,
+    fields: [
+      {name:'name', label:'Name', required:true},
+      {name:'address', label:'Address'},
+      {name:'phone', label:'Phone'},
+      {name:'capacity', label:'Capacity', type:'number', required:true}
+    ]
+  },
+  'pets': {
+    label: 'Pet',
+    endpoint: '/api/pets',
+    idField: 'petId',
+    data: () => pets,
+    fields: [
+      {name:'shelterId', label:'Shelter', type:'select', required:true, options: () => shelters.map(s => ({value:s.shelterId, label:`${s.id} - ${s.name}`}))},
+      {name:'name', label:'Name', required:true},
+      {name:'species', label:'Species', type:'select', required:true, options: () => ['Dog','Cat','Rabbit','Bird'].map(v => ({value:v, label:v}))},
+      {name:'breed', label:'Breed'},
+      {name:'sex', label:'Sex', type:'select', options: () => ['Male','Female','Unknown'].map(v => ({value:v, label:v}))},
+      {name:'color', label:'Color'},
+      {name:'birth', label:'Estimated birth date', type:'date'},
+      {name:'intake', label:'Intake date', type:'date', required:true, defaultValue: todayIso},
+      {name:'status', label:'Status', type:'select', required:true, options: petStatusOptions},
+      {name:'sterilized', label:'Sterilized', type:'bool'},
+      {name:'special', label:'Special needs', type:'textarea', wide:true}
+    ]
+  },
+  'applicants': {
+    label: 'Applicant',
+    endpoint: '/api/applicants',
+    idField: 'applicantId',
+    data: () => applicants,
+    fields: [
+      {name:'name', label:'Full name', required:true},
+      {name:'phone', label:'Phone'},
+      {name:'email', label:'Email', type:'email'},
+      {name:'address', label:'Address', type:'textarea', wide:true},
+      {name:'housingType', label:'Housing type', type:'select', options: () => ['Apartment','Condo','House','Townhouse','House with garden','House without garden','Shared housing'].map(v => ({value:v, label:v}))},
+      {name:'hasPetExperience', label:'Has pet experience', type:'bool'},
+      {name:'createdAt', label:'Created at', type:'date', defaultValue: todayIso}
+    ]
+  },
+  'medical-records': {
+    label: 'Medical record',
+    endpoint: '/api/medical-records',
+    idField: 'recordId',
+    data: () => medicalRecords,
+    fields: [
+      {name:'petId', label:'Pet', type:'select', required:true, options: petOptions},
+      {name:'date', label:'Visit date', type:'date', required:true, defaultValue: todayIso},
+      {name:'type', label:'Record type', type:'select', options: () => ['Check-up','Surgery','Injury','Dental','Treatment'].map(v => ({value:v, label:v}))},
+      {name:'vet', label:'Vet name'},
+      {name:'diagnosis', label:'Diagnosis', type:'textarea', wide:true},
+      {name:'treatment', label:'Treatment', type:'textarea', wide:true},
+      {name:'notes', label:'Notes', type:'textarea', wide:true}
+    ]
+  },
+  'vaccinations': {
+    label: 'Vaccination',
+    endpoint: '/api/vaccinations',
+    idField: 'vaccinationId',
+    data: () => vaccinations,
+    fields: [
+      {name:'petId', label:'Pet', type:'select', required:true, options: petOptions},
+      {name:'vaccine', label:'Vaccine name', required:true},
+      {name:'doseNo', label:'Dose no.', type:'number'},
+      {name:'vaccinationDate', label:'Vaccination date', type:'date', required:true, defaultValue: todayIso},
+      {name:'dueDate', label:'Next due date', type:'date'},
+      {name:'vet', label:'Vet name'},
+      {name:'notes', label:'Notes', type:'textarea', wide:true}
+    ]
+  },
+  'volunteers': {
+    label: 'Volunteer',
+    endpoint: '/api/volunteers',
+    idField: 'volunteerId',
+    data: () => volunteers,
+    fields: [
+      {name:'shelterId', label:'Shelter', type:'select', required:true, options: () => shelters.map(s => ({value:s.shelterId, label:`${s.id} - ${s.name}`}))},
+      {name:'name', label:'Full name', required:true},
+      {name:'phone', label:'Phone'},
+      {name:'email', label:'Email', type:'email'},
+      {name:'joined', label:'Join date', type:'date', defaultValue: todayIso},
+      {name:'availability', label:'Availability note', type:'textarea', wide:true}
+    ]
+  },
+  'care-assignments': {
+    label: 'Care assignment',
+    endpoint: '/api/care-assignments',
+    idField: 'assignmentId',
+    data: () => careAssignments,
+    fields: [
+      {name:'volunteerId', label:'Volunteer', type:'select', required:true, options: careVolunteerOptions},
+      {name:'petId', label:'Pet', type:'select', required:true, options: petOptions},
+      {name:'date', label:'Assignment date', type:'date', required:true, defaultValue: todayIso},
+      {name:'shift', label:'Shift', type:'select', required:true, options: () => ['Morning','Afternoon','Evening'].map(v => ({value:v, label:v}))},
+      {name:'task', label:'Task type', type:'select', required:true, options: () => ['Feeding','Cleaning','Walking','Grooming','Socializing','Medical support'].map(v => ({value:v, label:v}))},
+      {name:'status', label:'Status', type:'select', required:true, options: () => ['Scheduled','Completed','Cancelled'].map(v => ({value:v, label:v}))},
+      {name:'notes', label:'Notes', type:'textarea', wide:true}
+    ]
+  },
+  'follow-ups': {
+    label: 'Follow-up',
+    endpoint: '/api/follow-ups',
+    idField: 'followupId',
+    data: () => followUps,
+    fields: [
+      {name:'adoptionId', label:'Adoption record', type:'select', required:true, options: () => adoptionRecords.map(r => ({value:r.adoptionId, label:`${r.id} - ${r.pet} / ${r.applicant}`}))},
+      {name:'followupDate', label:'Follow-up date', type:'date', required:true, defaultValue: todayIso},
+      {name:'followupType', label:'Follow-up type', type:'select', required:true, options: () => ['Phone Check','Home Visit','Vet Check'].map(v => ({value:v, label:v}))},
+      {name:'petCondition', label:'Pet condition'},
+      {name:'adopterFeedback', label:'Adopter feedback', type:'textarea', wide:true},
+      {name:'resultStatus', label:'Result status', type:'select', required:true, options: () => ['Excellent','Good','Satisfactory','Needs Improvement'].map(v => ({value:v, label:v}))},
+      {name:'staffNote', label:'Staff note', type:'textarea', wide:true}
+    ]
+  }
+};
 
 function statusBadge(s) {
-  const m = {'Available':'badge-available','Reserved':'badge-reserved','Adopted':'badge-adopted','Medical hold':'badge-hold','Pending':'badge-pending','Approved':'badge-approved','Rejected':'badge-rejected'};
-  return `<span class="badge ${m[s]||''}">${s}</span>`;
+  const m = {
+    'Available':'badge-available',
+    'Reserved':'badge-reserved',
+    'Adopted':'badge-adopted',
+    'Medical hold':'badge-hold',
+    'Pending':'badge-pending',
+    'Approved':'badge-approved',
+    'Rejected':'badge-rejected',
+    'Completed':'badge-approved',
+    'Scheduled':'badge-pending',
+    'Cancelled':'badge-rejected',
+    'Active':'badge-active',
+    'Inactive':'badge-inactive',
+    'Pass':'badge-approved',
+    'Review':'badge-pending',
+    'Excellent':'badge-approved',
+    'Good':'badge-active',
+    'Satisfactory':'badge-active',
+    'Needs attention':'badge-pending',
+    'Needs Improvement':'badge-pending',
+    'Yes':'badge-approved',
+    'No':'badge-inactive'
+  };
+  return `<span class="badge ${m[s]||''}">${escapeHtml(s)}</span>`;
 }
 
 function showToast(msg, type='success') {
@@ -457,16 +856,577 @@ function showPage(id, el) {
 
 function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
 
+function escapeHtml(value) {
+  const div = document.createElement('div');
+  div.textContent = value == null || value === '' ? '-' : String(value);
+  return div.innerHTML;
+}
+
+function escapeFormValue(value) {
+  const div = document.createElement('div');
+  div.textContent = value == null ? '' : String(value);
+  return div.innerHTML;
+}
+
+function entityCode(prefix, value) {
+  return value ? `${prefix}-${String(value).padStart(3, '0')}` : '';
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function petOptions() {
+  return pets.map(p => ({value:p.petId, label:`${p.id} - ${p.name}${p.shelter ? ` (${p.shelter})` : ''}`}));
+}
+
+function careVolunteerOptions() {
+  return volunteers.map(v => ({value:v.volunteerId, label:`${v.id} - ${v.name}${v.shelter ? ` (${v.shelter})` : ''}`}));
+}
+
+function petById(id) {
+  return pets.find(p => Number(p.petId) === Number(id));
+}
+
+function volunteerById(id) {
+  return volunteers.find(v => Number(v.volunteerId) === Number(id));
+}
+
+function approvedApplicationsForPet(petId, excludeApplicationId=null) {
+  return apps.filter(a =>
+    Number(a.petId) === Number(petId)
+    && a.status === 'Approved'
+    && Number(a.applicationId) !== Number(excludeApplicationId)
+  );
+}
+
+function pendingApplicationsForPet(petId, excludeApplicationId=null) {
+  return apps.filter(a =>
+    Number(a.petId) === Number(petId)
+    && a.status === 'Pending'
+    && Number(a.applicationId) !== Number(excludeApplicationId)
+  );
+}
+
+function earliestAdoptionDateForPet(petId) {
+  const dates = adoptionRecords
+    .filter(r => Number(r.petId) === Number(petId) && r.adoptionDate)
+    .map(r => r.adoptionDate)
+    .sort();
+  return dates[0] || '';
+}
+
+function petStatusOptions(item) {
+  if (!item) {
+    return ['Available','Medical hold'].map(v => ({value:v, label:v}));
+  }
+  const pending = pendingApplicationsForPet(item.petId, item.applicationId).length > 0;
+  const approved = approvedApplicationsForPet(item.petId, item.applicationId).length > 0;
+  if (pending) return ['Reserved'].map(v => ({value:v, label:v}));
+  if (approved) return ['Adopted'].map(v => ({value:v, label:v}));
+  return ['Available','Medical hold'].map(v => ({value:v, label:v}));
+}
+
+function duplicateEmail(items, idField, currentId, email) {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return items.some(item =>
+    Number(item[idField]) !== Number(currentId)
+    && (item.email || '').trim().toLowerCase() === normalized
+  );
+}
+
+function firstDateConflict(entries, limitDate) {
+  return entries
+    .filter(([, value]) => value && value < limitDate)
+    .sort((a, b) => a[1].localeCompare(b[1]))[0] || null;
+}
+
+function clientValidateCrudPayload(resource, payload) {
+  const editingId = crudContext?.mode === 'edit' ? Number(crudContext.id) : null;
+
+  if (resource === 'shelters' && editingId != null) {
+    const activePets = pets.filter(p =>
+      Number(p.shelterId) === editingId
+      && ['Available', 'Reserved', 'Medical hold'].includes(p.status)
+    ).length;
+    if (payload.capacity != null && Number(payload.capacity) < activePets) {
+      return 'Shelter capacity cannot be lower than its active pet count.';
+    }
+  }
+
+  if (resource === 'pets') {
+    if (payload.birth && payload.intake && payload.birth > payload.intake) {
+      return 'Estimated birth date cannot be after intake date.';
+    }
+    if (payload.intake && payload.intake > todayIso()) {
+      return 'Pet intake date cannot be in the future.';
+    }
+    if (editingId == null) {
+      if (payload.status === 'Reserved' || payload.status === 'Adopted') {
+        return 'New pets can start only as Available or Medical hold.';
+      }
+      return null;
+    }
+
+    const pending = pendingApplicationsForPet(editingId).length > 0;
+    const approved = approvedApplicationsForPet(editingId).length > 0;
+    if (pending && payload.status !== 'Reserved') {
+      return 'A pet with a pending application must stay Reserved.';
+    }
+    if (!pending && approved && payload.status !== 'Adopted') {
+      return 'A pet with an approved adoption must stay Adopted.';
+    }
+    if (!pending && !approved && (payload.status === 'Reserved' || payload.status === 'Adopted')) {
+      return 'Reserved and Adopted statuses must come from the adoption workflow, not direct edits.';
+    }
+    if (payload.intake) {
+      const relatedConflict = firstDateConflict([
+        ...apps.filter(a => Number(a.petId) === editingId).map(a => ['application', a.date]),
+        ...adoptionRecords.filter(r => Number(r.petId) === editingId).map(r => ['adoption', r.adoptionDate]),
+        ...medicalRecords.filter(r => Number(r.petId) === editingId).map(r => ['medical visit', r.date]),
+        ...vaccinations.filter(v => Number(v.petId) === editingId).map(v => ['vaccination', v.vaccinationDate]),
+        ...careAssignments.filter(c => Number(c.petId) === editingId).map(c => ['care assignment', c.date])
+      ], payload.intake);
+      if (relatedConflict) {
+        return `Pet intake date cannot be later than an existing ${relatedConflict[0]} on ${relatedConflict[1]}.`;
+      }
+    }
+    if (payload.shelterId) {
+      const conflictingAssignment = careAssignments.find(c =>
+        Number(c.petId) === editingId
+        && Number(volunteerById(c.volunteerId)?.shelterId) !== Number(payload.shelterId)
+      );
+      if (conflictingAssignment) {
+        return 'Pet shelter cannot be changed because existing care assignments would become cross-shelter.';
+      }
+    }
+    return null;
+  }
+
+  if (resource === 'applicants' && duplicateEmail(applicants, 'applicantId', editingId, payload.email)) {
+    return 'Applicant email already exists.';
+  }
+
+  if (resource === 'medical-records') {
+    const pet = petById(payload.petId);
+    if (pet && payload.date && pet.intake && payload.date < pet.intake) {
+      return 'Medical visit date cannot be before pet intake date.';
+    }
+  }
+
+  if (resource === 'vaccinations') {
+    const pet = petById(payload.petId);
+    if (pet && payload.vaccinationDate && pet.intake && payload.vaccinationDate < pet.intake) {
+      return 'Vaccination date cannot be before pet intake date.';
+    }
+    if (payload.dueDate && payload.vaccinationDate && payload.dueDate < payload.vaccinationDate) {
+      return 'Next due date cannot be before vaccination date.';
+    }
+  }
+
+  if (resource === 'volunteers') {
+    if (duplicateEmail(volunteers, 'volunteerId', editingId, payload.email)) {
+      return 'Volunteer email already exists.';
+    }
+    if (editingId != null && payload.joined) {
+      const earlyAssignment = firstDateConflict(
+        careAssignments
+          .filter(c => Number(c.volunteerId) === editingId)
+          .map(c => ['care assignment', c.date]),
+        payload.joined
+      );
+      if (earlyAssignment) {
+        return `Volunteer join date cannot be later than existing ${earlyAssignment[0]} on ${earlyAssignment[1]}.`;
+      }
+    }
+    if (editingId != null && payload.shelterId) {
+      const conflictingAssignment = careAssignments.find(c =>
+        Number(c.volunteerId) === editingId
+        && Number(petById(c.petId)?.shelterId) !== Number(payload.shelterId)
+      );
+      if (conflictingAssignment) {
+        return 'Volunteer shelter cannot be changed because existing care assignments would become cross-shelter.';
+      }
+    }
+  }
+
+  if (resource === 'care-assignments') {
+    const volunteer = volunteerById(payload.volunteerId);
+    const pet = petById(payload.petId);
+    if (volunteer && pet && Number(volunteer.shelterId) !== Number(pet.shelterId)) {
+      return 'Volunteer and pet must belong to the same shelter for care assignments.';
+    }
+    if (pet && payload.date && pet.intake && payload.date < pet.intake) {
+      return 'Care assignment date cannot be before pet intake date.';
+    }
+    if (volunteer && payload.date && volunteer.joined && payload.date < volunteer.joined) {
+      return 'Care assignment date cannot be before the volunteer join date.';
+    }
+    const adoptionDate = earliestAdoptionDateForPet(payload.petId);
+    if (adoptionDate && payload.date && payload.date >= adoptionDate && payload.status !== 'Cancelled') {
+      return 'Adopted pets cannot receive scheduled care assignments on or after adoption date.';
+    }
+  }
+
+  if (resource === 'follow-ups') {
+    const adoption = adoptionRecords.find(r => Number(r.adoptionId) === Number(payload.adoptionId));
+    if (adoption && payload.followupDate && adoption.adoptionDate && payload.followupDate < adoption.adoptionDate) {
+      return 'Follow-up date cannot be before adoption date.';
+    }
+  }
+
+  return null;
+}
+
+function clientDeleteGuard(resource, id) {
+  if (resource === 'shelters') {
+    if (pets.some(p => Number(p.shelterId) === Number(id)) || volunteers.some(v => Number(v.shelterId) === Number(id))) {
+      return 'Shelters with linked pets or volunteers cannot be deleted.';
+    }
+  }
+  if (resource === 'applicants') {
+    if (apps.some(a => Number(a.applicantId) === Number(id))) {
+      return 'Applicants with adoption applications cannot be deleted.';
+    }
+  }
+  if (resource === 'pets') {
+    if (
+      apps.some(a => Number(a.petId) === Number(id))
+      || medicalRecords.some(r => Number(r.petId) === Number(id))
+      || vaccinations.some(v => Number(v.petId) === Number(id))
+      || careAssignments.some(c => Number(c.petId) === Number(id))
+    ) {
+      return 'Pets with linked applications, medical records, vaccinations, or care assignments cannot be deleted.';
+    }
+  }
+  if (resource === 'volunteers') {
+    if (careAssignments.some(c => Number(c.volunteerId) === Number(id))) {
+      return 'Volunteers with care assignments cannot be deleted.';
+    }
+  }
+  return null;
+}
+
+function actionButtons(resource, id, includeView=false) {
+  const viewButton = includeView ? `<button class="btn-sm" onclick="openPetDetailById(${id})">View</button>` : '';
+  return `<div class="action-row">
+    ${viewButton}
+    <button class="btn-sm" onclick="openCrudModal('${resource}','edit',${id})">Edit</button>
+    <button class="btn-reject" onclick="deleteCrudRecord('${resource}',${id})">Delete</button>
+  </div>`;
+}
+
+function apiPath(path) {
+  return API_BASE + path;
+}
+
+async function apiRequest(path, options={}) {
+  const config = {
+    headers: {'Content-Type':'application/json'},
+    ...options
+  };
+  if (config.body && typeof config.body !== 'string') {
+    config.body = JSON.stringify(config.body);
+  }
+  const res = await fetch(apiPath(path), config);
+  const text = await res.text();
+  const payload = text ? JSON.parse(text) : {};
+  if (!res.ok) {
+    throw new Error(payload.error || `Request failed with status ${res.status}`);
+  }
+  return payload;
+}
+
+function findCrudItem(resource, id) {
+  const config = crudConfigs[resource];
+  return config.data().find(item => Number(item[config.idField]) === Number(id));
+}
+
+function fieldValue(field, item) {
+  if (item && item[field.name] != null) {
+    const value = item[field.name];
+    return field.type === 'date' && typeof value === 'string' ? value.slice(0, 10) : value;
+  }
+  if (typeof field.defaultValue === 'function') return field.defaultValue();
+  return field.defaultValue ?? '';
+}
+
+function renderCrudField(field, item) {
+  const value = fieldValue(field, item);
+  const required = field.required ? ' required' : '';
+  const groupClass = field.wide || field.type === 'textarea' ? 'form-group form-group-wide' : 'form-group';
+  const label = `<label class="form-label">${escapeHtml(field.label)}${field.required ? ' *' : ''}</label>`;
+  if (field.type === 'textarea') {
+    return `<div class="${groupClass}">${label}<textarea class="form-control" id="crud-${field.name}"${required}>${escapeFormValue(value)}</textarea></div>`;
+  }
+  if (field.type === 'select') {
+    const options = (field.options ? field.options(item, crudContext) : []).map(option => {
+      const selected = String(option.value) === String(value) ? ' selected' : '';
+      return `<option value="${escapeHtml(option.value)}"${selected}>${escapeHtml(option.label)}</option>`;
+    }).join('');
+    return `<div class="${groupClass}">${label}<select class="form-control" id="crud-${field.name}"${required}><option value="">Select...</option>${options}</select></div>`;
+  }
+  if (field.type === 'bool') {
+    const selectedTrue = value === true || value === 'Yes' || value === 1 ? ' selected' : '';
+    const selectedFalse = selectedTrue ? '' : ' selected';
+    return `<div class="${groupClass}">${label}<select class="form-control" id="crud-${field.name}"><option value="true"${selectedTrue}>Yes</option><option value="false"${selectedFalse}>No</option></select></div>`;
+  }
+  const inputType = field.type === 'number' || field.type === 'date' || field.type === 'email' ? field.type : 'text';
+  return `<div class="${groupClass}">${label}<input class="form-control" id="crud-${field.name}" type="${inputType}" value="${escapeFormValue(value)}"${required}></div>`;
+}
+
+function openCrudModal(resource, mode, id=null) {
+  const config = crudConfigs[resource];
+  const item = mode === 'edit' ? findCrudItem(resource, id) : null;
+  if (mode === 'edit' && !item) {
+    showToast('Record not found', 'error');
+    return;
+  }
+  crudContext = {resource, mode, id};
+  document.getElementById('crud-title').textContent = `${mode === 'create' ? 'New' : 'Edit'} ${config.label}`;
+  document.getElementById('crud-submit').textContent = mode === 'create' ? 'Create' : 'Save changes';
+  document.getElementById('crud-fields').innerHTML = config.fields.map(field => renderCrudField(field, item)).join('');
+  document.getElementById('crud-overlay').classList.add('open');
+}
+
+function readCrudPayload() {
+  const config = crudConfigs[crudContext.resource];
+  const payload = {};
+  for (const field of config.fields) {
+    const el = document.getElementById(`crud-${field.name}`);
+    let value = el.value;
+    if (field.type === 'number') value = value === '' ? null : Number(value);
+    if (field.type === 'bool') value = value === 'true';
+    payload[field.name] = value;
+  }
+  return payload;
+}
+
+async function submitCrudForm() {
+  if (!crudContext) return;
+  const config = crudConfigs[crudContext.resource];
+  const method = crudContext.mode === 'create' ? 'POST' : 'PATCH';
+  const path = crudContext.mode === 'create' ? config.endpoint : `${config.endpoint}/${crudContext.id}`;
+  const payload = readCrudPayload();
+  const clientError = clientValidateCrudPayload(crudContext.resource, payload);
+  if (clientError) {
+    showToast(clientError, 'error');
+    return;
+  }
+  try {
+    await apiRequest(path, {method, body: payload});
+    closeOverlay('crud-overlay');
+    await loadData();
+    showToast(`${config.label} ${crudContext.mode === 'create' ? 'created' : 'updated'}`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteCrudRecord(resource, id) {
+  const config = crudConfigs[resource];
+  const item = findCrudItem(resource, id);
+  const label = item?.name || item?.id || config.label;
+  const blockedReason = clientDeleteGuard(resource, id);
+  if (blockedReason) {
+    showToast(blockedReason, 'error');
+    return;
+  }
+  if (!window.confirm(`Delete ${label}?`)) return;
+  try {
+    await apiRequest(`${config.endpoint}/${id}`, {method: 'DELETE'});
+    await loadData();
+    showToast(`${config.label} deleted`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function loadData() {
+  const [
+    dashboardData,
+    shelterData,
+    petsData,
+    applicantsData,
+    applicationsData,
+    adoptionRecordData,
+    followupData,
+    medicalData,
+    vaccinationData,
+    volunteerData,
+    assignmentData,
+    analyticsData,
+    llmBonusData
+  ] = await Promise.all([
+    apiRequest('/api/dashboard'),
+    apiRequest('/api/shelters'),
+    apiRequest('/api/pets'),
+    apiRequest('/api/applicants'),
+    apiRequest('/api/applications'),
+    apiRequest('/api/adoption-records'),
+    apiRequest('/api/follow-ups'),
+    apiRequest('/api/medical-records'),
+    apiRequest('/api/vaccinations'),
+    apiRequest('/api/volunteers'),
+    apiRequest('/api/care-assignments'),
+    apiRequest('/api/analytics'),
+    apiRequest('/api/llm-bonus')
+  ]);
+
+  dashboard = dashboardData;
+  shelters = shelterData.shelters || [];
+  pets = petsData.pets || [];
+  applicants = applicantsData.applicants || [];
+  apps = applicationsData.applications || [];
+  adoptionRecords = adoptionRecordData.adoptionRecords || [];
+  followUps = followupData.followUps || [];
+  medicalRecords = medicalData.medicalRecords || [];
+  vaccinations = vaccinationData.vaccinations || [];
+  volunteers = volunteerData.volunteers || [];
+  careAssignments = assignmentData.careAssignments || [];
+  analytics = analyticsData;
+  llmBonus = llmBonusData;
+
+  populateSpeciesFilter();
+  renderDashboard();
+  renderShelters();
+  filterPets();
+  filterApplicants();
+  filterApps();
+  renderAdoptions();
+  renderMedical();
+  renderVolunteers();
+  renderAnalytics();
+  renderLlmBonus();
+}
+
+function renderDashboard() {
+  const stats = dashboard?.stats || {};
+  document.getElementById('dash-total-pets').textContent = stats.totalPets ?? '--';
+  document.getElementById('dash-shelter-count').textContent = `in ${stats.shelterCount ?? 0} shelters`;
+  document.getElementById('dash-available-count').textContent = stats.availablePets ?? '--';
+  document.getElementById('dash-pending-count').textContent = stats.pendingApplications ?? '--';
+  document.getElementById('dash-monthly-adoptions').textContent = stats.monthlyAdoptions ?? '--';
+
+  const statusTb = document.getElementById('status-overview-tbody');
+  const statuses = dashboard?.statusOverview || [];
+  statusTb.innerHTML = statuses.length ? statuses.map(row => `<tr>
+    <td>${statusBadge(row.status)}</td>
+    <td>${escapeHtml(row.count)}</td>
+    <td>${escapeHtml(row.share)}%</td>
+  </tr>`).join('') : '<tr><td colspan="3" style="color:var(--color-text-secondary)">No status data</td></tr>';
+
+  const feed = document.getElementById('activity-feed');
+  const activities = dashboard?.activities || [];
+  feed.innerHTML = activities.length ? activities.map(a => `<div class="activity-item">
+    <div class="activity-dot ${escapeHtml(a.dotClass)}"></div>
+    <div>
+      <div class="activity-text">${escapeHtml(a.text)}</div>
+      <div class="activity-time">${escapeHtml(a.time)}</div>
+    </div>
+  </div>`).join('') : '<div class="activity-item"><div class="activity-dot dot-blue"></div><div><div class="activity-text">No recent activity</div><div class="activity-time">Database</div></div></div>';
+}
+
+function renderShelters() {
+  document.getElementById('shelter-tbody').innerHTML = renderTableRows(
+    shelters,
+    9,
+    s => `<tr>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(s.id)}</td>
+      <td style="font-weight:500">${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.address)}</td>
+      <td>${escapeHtml(s.phone)}</td>
+      <td>${escapeHtml(s.capacity)}</td>
+      <td>${escapeHtml(s.currentPetCount)}</td>
+      <td>${escapeHtml(s.volunteerCount)}</td>
+      <td>${escapeHtml(formatPercent(s.occupancyRate))}</td>
+      <td>${actionButtons('shelters', s.shelterId)}</td>
+    </tr>`
+  );
+}
+
+function filterApplicants() {
+  const q = document.getElementById('applicant-search').value.toLowerCase();
+  const experience = document.getElementById('applicant-experience-filter').value;
+  renderApplicants(applicants.filter(a => {
+    const searchable = [a.id, a.name, a.phone, a.email, a.address, a.housingType].join(' ').toLowerCase();
+    const matchesExperience = !experience
+      || (experience === 'yes' && a.hasPetExperience)
+      || (experience === 'no' && !a.hasPetExperience);
+    return (!q || searchable.includes(q)) && matchesExperience;
+  }));
+}
+
+function renderApplicants(data) {
+  document.getElementById('applicant-tbody').innerHTML = renderTableRows(
+    data,
+    9,
+    a => `<tr>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(a.id)}</td>
+      <td style="font-weight:500">${escapeHtml(a.name)}</td>
+      <td>${escapeHtml(a.phone)}</td>
+      <td>${escapeHtml(a.email)}</td>
+      <td class="note-cell">${escapeHtml(a.address)}</td>
+      <td>${escapeHtml(a.housingType)}</td>
+      <td>${statusBadge(a.hasPetExperience ? 'Yes' : 'No')}</td>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(a.createdAt)}</td>
+      <td>${actionButtons('applicants', a.applicantId)}</td>
+    </tr>`
+  );
+}
+
+function renderAdoptions() {
+  document.getElementById('adoption-record-tbody').innerHTML = renderTableRows(
+    adoptionRecords,
+    8,
+    r => `<tr>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(r.id)}</td>
+      <td>${escapeHtml(r.applicationCode)}</td>
+      <td style="font-weight:500">${escapeHtml(r.applicant)}<div class="muted-text">${escapeHtml(entityCode('A', r.applicantId))}</div></td>
+      <td>${escapeHtml(r.pet)} <span class="muted-text">${escapeHtml(entityCode('P', r.petId))} ${escapeHtml(r.petSpecies)}</span></td>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(r.adoptionDate)}</td>
+      <td>${escapeHtml(formatMoney(r.finalAdoptionFee))}</td>
+      <td class="note-cell">${escapeHtml(r.handoverNote)}</td>
+      <td>${escapeHtml(r.followupCount)}${r.lastFollowupDate ? `<div class="muted-text">last ${escapeHtml(r.lastFollowupDate)}</div>` : ''}</td>
+    </tr>`
+  );
+
+  document.getElementById('followup-tbody').innerHTML = renderTableRows(
+    followUps,
+    9,
+    f => `<tr>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(f.id)}</td>
+      <td>${escapeHtml(f.adoptionCode)}</td>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(f.followupDate)}</td>
+      <td>${escapeHtml(f.followupType)}</td>
+      <td class="note-cell">${escapeHtml(f.petCondition)}</td>
+      <td class="note-cell">${escapeHtml(f.adopterFeedback)}</td>
+      <td>${statusBadge(f.resultStatus)}</td>
+      <td class="note-cell">${escapeHtml(f.staffNote)}</td>
+      <td>${actionButtons('follow-ups', f.followupId)}</td>
+    </tr>`
+  );
+}
+
+function populateSpeciesFilter() {
+  const sel = document.getElementById('pet-species-filter');
+  const current = sel.value;
+  const species = [...new Set(pets.map(p => p.species).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All species</option>' + species.map(s => `<option>${escapeHtml(s)}</option>`).join('');
+  sel.value = species.includes(current) ? current : '';
+}
+
 function renderPets(data) {
   const tb = document.getElementById('pet-tbody');
   if (!data.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No pets found</td></tr>'; return; }
   tb.innerHTML = data.map(p => `<tr>
-    <td style="color:var(--color-text-secondary)">${p.id}</td>
-    <td style="font-weight:500">${p.name}</td>
-    <td>${p.species}</td><td>${p.breed}</td><td>${p.sex}</td>
+    <td style="color:var(--color-text-secondary)">${escapeHtml(p.id)}</td>
+    <td style="font-weight:500">${escapeHtml(p.name)}</td>
+    <td>${escapeHtml(p.species)}</td><td>${escapeHtml(p.breed)}</td><td>${escapeHtml(p.sex)}</td>
     <td>${statusBadge(p.status)}</td>
-    <td style="color:var(--color-text-secondary)">${p.intake}</td>
-    <td><button class="btn-sm" onclick="openPetDetail(${pets.indexOf(p)})">View</button></td>
+    <td style="color:var(--color-text-secondary)">${escapeHtml(p.intake)}</td>
+    <td>${actionButtons('pets', p.petId, true)}</td>
   </tr>`).join('');
 }
 
@@ -474,18 +1434,28 @@ function filterPets() {
   const q = document.getElementById('pet-search').value.toLowerCase();
   const st = document.getElementById('pet-status-filter').value;
   const sp = document.getElementById('pet-species-filter').value;
-  renderPets(pets.filter(p => (!q || p.name.toLowerCase().includes(q) || p.breed.toLowerCase().includes(q)) && (!st || p.status === st) && (!sp || p.species === sp)));
+  renderPets(pets.filter(p => {
+    const searchable = [p.id, p.name, p.breed, p.species].join(' ').toLowerCase();
+    return (!q || searchable.includes(q)) && (!st || p.status === st) && (!sp || p.species === sp);
+  }));
 }
 
 function openPetDetail(i) {
   const p = pets[i];
+  if (!p) return;
   document.getElementById('modal-pet-name').textContent = p.name;
   document.getElementById('modal-pet-fields').innerHTML = [
     ['ID',p.id],['Species',p.species],['Breed',p.breed],['Sex',p.sex],
     ['Color',p.color],['Est. birth date',p.birth],['Intake date',p.intake],
-    ['Status',p.status],['Sterilized',p.sterilized],['Special needs',p.special]
-  ].map(([l,v]) => `<div class="field-row"><span class="field-label">${l}</span><span>${v}</span></div>`).join('');
+    ['Status',p.status],['Sterilized',p.sterilized],['Special needs',p.special],
+    ['Shelter ID',p.shelterId ? `S-${String(p.shelterId).padStart(3,'0')}` : ''],
+    ['Shelter',p.shelter]
+  ].map(([l,v]) => `<div class="field-row"><span class="field-label">${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`).join('');
   document.getElementById('pet-detail-overlay').classList.add('open');
+}
+
+function openPetDetailById(id) {
+  openPetDetail(pets.findIndex(p => Number(p.petId) === Number(id)));
 }
 
 function renderApps(data) {
@@ -493,14 +1463,17 @@ function renderApps(data) {
   if (!data.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No applications found</td></tr>'; return; }
   tb.innerHTML = data.map(a => {
     const gi = apps.indexOf(a);
+    const approvalLocked = a.status === 'Pending' && approvedApplicationsForPet(a.petId, a.applicationId).length > 0;
     const actions = a.status === 'Pending'
-      ? `<div style="display:flex;gap:6px"><button class="btn-sm" onclick="openAppDetail(${gi})">View</button><button class="btn-approve" onclick="openReview(${gi})">Review</button></div>`
+      ? approvalLocked
+        ? `<div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="openAppDetail(${gi})">View</button><span class="muted-text">Approval locked</span></div>`
+        : `<div style="display:flex;gap:6px"><button class="btn-sm" onclick="openAppDetail(${gi})">View</button><button class="btn-approve" onclick="openReview(${gi})">Review</button></div>`
       : `<button class="btn-sm" onclick="openAppDetail(${gi})">View</button>`;
     return `<tr>
-      <td style="color:var(--color-text-secondary)">${a.id}</td>
-      <td style="font-weight:500">${a.applicant}</td>
-      <td>${a.pet}</td>
-      <td style="color:var(--color-text-secondary)">${a.date}</td>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(a.id)}</td>
+      <td style="font-weight:500">${escapeHtml(a.applicant)}</td>
+      <td>${escapeHtml(a.pet)}</td>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(a.date)}</td>
       <td>${statusBadge(a.status)}</td>
       <td>${actions}</td>
     </tr>`;
@@ -510,29 +1483,41 @@ function renderApps(data) {
 function filterApps() {
   const q = document.getElementById('app-search').value.toLowerCase();
   const st = document.getElementById('app-status-filter').value;
-  renderApps(apps.filter(a => (!q || a.applicant.toLowerCase().includes(q) || a.pet.toLowerCase().includes(q)) && (!st || a.status === st)));
+  renderApps(apps.filter(a => {
+    const searchable = [a.id, a.applicant, a.pet, a.reason].join(' ').toLowerCase();
+    return (!q || searchable.includes(q)) && (!st || a.status === st);
+  }));
 }
 
 function openAppDetail(i) {
   const a = apps[i];
-  document.getElementById('modal-app-title').textContent = `${a.id} — ${a.applicant}`;
+  if (!a) return;
+  document.getElementById('modal-app-title').textContent = `${a.id} - ${a.applicant}`;
   document.getElementById('modal-app-fields').innerHTML = [
+    ['Applicant ID',entityCode('A', a.applicantId)],['Pet ID',entityCode('P', a.petId)],
+    ['Applicant phone',a.applicantPhone],['Applicant email',a.applicantEmail],
+    ['Applicant address',a.applicantAddress],['Pet experience',a.hasPetExperience ? 'Yes' : 'No'],
     ['Pet',a.pet],['Application date',a.date],['Status',a.status],
-    ['Reason',a.reason],['Reviewer',a.reviewer],['Decision note',a.decision]
-  ].map(([l,v]) => `<div class="field-row"><span class="field-label">${l}</span><span style="max-width:60%;text-align:right">${v}</span></div>`).join('');
+    ['Housing type',a.housingType],['Applicant created at',a.applicantCreatedAt],
+    ['Reason',a.reason],['Reviewer',a.reviewer],
+    ['Reviewed date',a.reviewedDate],['Decision note',a.decision]
+  ].map(([l,v]) => `<div class="field-row"><span class="field-label">${escapeHtml(l)}</span><span style="max-width:60%;text-align:right">${escapeHtml(v)}</span></div>`).join('');
   document.getElementById('app-detail-overlay').classList.add('open');
 }
 
 function openReview(i) {
   reviewingIndex = i;
   const a = apps[i];
+  if (!a) return;
   document.getElementById('review-title').textContent = `Review: ${a.id}`;
-  document.getElementById('review-summary').innerHTML = `<strong>${a.applicant}</strong> applied to adopt <strong>${a.pet}</strong> on ${a.date}.<br><span style="color:var(--color-text-secondary);margin-top:4px;display:block">"${a.reason}"</span>`;
+  document.getElementById('review-summary').innerHTML = `<strong>${escapeHtml(a.applicant)}</strong> applied to adopt <strong>${escapeHtml(a.pet)}</strong> on ${escapeHtml(a.date)}.<br><span style="color:var(--color-text-secondary);margin-top:4px;display:block">"${escapeHtml(a.reason)}"</span>`;
   document.getElementById('review-note').value = '';
+  document.getElementById('review-fee').value = '';
+  document.getElementById('review-handover').value = '';
   document.getElementById('review-overlay').classList.add('open');
 }
 
-function submitReview(decision) {
+async function submitReview(decision) {
   if (reviewingIndex < 0) return;
   const note = document.getElementById('review-note').value.trim();
   if (!note) {
@@ -541,25 +1526,56 @@ function submitReview(decision) {
     return;
   }
   const a = apps[reviewingIndex];
-  a.status = decision;
-  a.reviewer = 'Staff (you)';
-  a.decision = note;
-  closeOverlay('review-overlay');
-  renderApps(apps);
-  updateDashPending();
-  prependActivity(`Application ${a.id} ${decision.toLowerCase()} for ${a.pet}`, decision === 'Approved' ? 'dot-green' : 'dot-amber');
-  showToast(`Application ${a.id} marked as ${decision}`, 'success');
-  reviewingIndex = -1;
+  if (decision === 'Approved') {
+    const conflict = approvedApplicationsForPet(a.petId, a.applicationId)[0];
+    if (conflict) {
+      showToast(`Cannot approve ${a.id}: ${a.pet} already has approved application ${conflict.id}.`, 'error');
+      return;
+    }
+  }
+  const feeText = document.getElementById('review-fee').value.trim();
+  const handoverNote = document.getElementById('review-handover').value.trim();
+  try {
+    await apiRequest(`/api/applications/${a.applicationId}/review`, {
+      method: 'PATCH',
+      body: {
+        decision,
+        note,
+        reviewerName: 'Staff (you)',
+        finalAdoptionFee: feeText ? Number(feeText) : null,
+        handoverNote
+      }
+    });
+    closeOverlay('review-overlay');
+    reviewingIndex = -1;
+    await loadData();
+    showToast(`Application ${a.id} marked as ${decision}`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 function openNewAppModal() {
-  const sel = document.getElementById('form-pet');
-  sel.innerHTML = '<option value="">Select a pet...</option>';
-  pets.filter(p => p.status === 'Available').forEach(p => {
+  const applicantSel = document.getElementById('form-applicant');
+  applicantSel.innerHTML = '<option value="">Select an applicant...</option>';
+  applicants.forEach(a => {
+    const o = document.createElement('option');
+    o.textContent = a.housingType ? `${a.name} (${a.housingType})` : a.name;
+    o.value = a.applicantId;
+    applicantSel.appendChild(o);
+  });
+
+  const petSel = document.getElementById('form-pet');
+  petSel.innerHTML = '<option value="">Select a pet...</option>';
+  pets.filter(p =>
+    p.status === 'Available'
+    && !approvedApplicationsForPet(p.petId).length
+    && !pendingApplicationsForPet(p.petId).length
+  ).forEach(p => {
     const o = document.createElement('option');
     o.textContent = `${p.name} (${p.breed})`;
-    o.value = p.name;
-    sel.appendChild(o);
+    o.value = p.petId;
+    petSel.appendChild(o);
   });
   document.getElementById('form-applicant').value = '';
   document.getElementById('form-reason').value = '';
@@ -567,43 +1583,380 @@ function openNewAppModal() {
   document.getElementById('new-app-overlay').classList.add('open');
 }
 
-function submitNewApp() {
-  const applicant = document.getElementById('form-applicant').value;
-  const petName = document.getElementById('form-pet').value;
+function syncHousingFromApplicant() {
+  const applicantId = Number(document.getElementById('form-applicant').value);
+  const applicant = applicants.find(a => a.applicantId === applicantId);
+  if (applicant?.housingType) {
+    document.getElementById('form-housing').value = applicant.housingType;
+  }
+}
+
+async function submitNewApp() {
+  const applicantId = Number(document.getElementById('form-applicant').value);
+  const petId = Number(document.getElementById('form-pet').value);
   const reason = document.getElementById('form-reason').value.trim();
   const housing = document.getElementById('form-housing').value;
-  if (!applicant || !petName || !reason || !housing) { showToast('Please fill in all fields', 'info'); return; }
-  const today = new Date().toISOString().slice(0, 10);
-  const newApp = { id:`APP-00${nextAppNum++}`, applicant, pet:petName, date:today, status:'Pending', reviewer:'—', reason, decision:'—' };
-  apps.unshift(newApp);
-  const pet = pets.find(p => p.name === petName);
-  if (pet) pet.status = 'Reserved';
-  closeOverlay('new-app-overlay');
-  renderApps(apps);
-  filterPets();
-  updateDashPending();
-  prependActivity(`New application from ${applicant} for ${petName}`, 'dot-amber');
-  showToast(`Application ${newApp.id} submitted successfully`, 'success');
+  if (!applicantId || !petId || !reason || !housing) { showToast('Please fill in all fields', 'info'); return; }
+  try {
+    const result = await apiRequest('/api/applications', {
+      method: 'POST',
+      body: {applicantId, petId, reason, housingType: housing}
+    });
+    closeOverlay('new-app-overlay');
+    await loadData();
+    showToast(`Application ${result.application.id} submitted successfully`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
-function updateDashPending() {
-  document.getElementById('dash-pending-count').textContent = apps.filter(a => a.status === 'Pending').length;
+function openNewFollowupModal() {
+  const adoptionSel = document.getElementById('followup-adoption');
+  adoptionSel.innerHTML = '<option value="">Select an adoption...</option>';
+  adoptionRecords.forEach(record => {
+    const o = document.createElement('option');
+    o.textContent = `${record.id} - ${record.pet} / ${record.applicant}`;
+    o.value = record.adoptionId;
+    adoptionSel.appendChild(o);
+  });
+  document.getElementById('followup-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('followup-type').value = '';
+  document.getElementById('followup-condition').value = '';
+  document.getElementById('followup-feedback').value = '';
+  document.getElementById('followup-result').value = '';
+  document.getElementById('followup-note').value = '';
+  document.getElementById('new-followup-overlay').classList.add('open');
 }
 
-function prependActivity(text, dotClass) {
-  const feed = document.getElementById('activity-feed');
-  const now = new Date();
-  const h = now.getHours(), m = String(now.getMinutes()).padStart(2,'0');
-  const time = `Today, ${h}:${m} ${h < 12 ? 'AM' : 'PM'}`;
-  const div = document.createElement('div');
-  div.className = 'activity-item';
-  div.innerHTML = `<div class="activity-dot ${dotClass}"></div><div><div class="activity-text">${text}</div><div class="activity-time">${time}</div></div>`;
-  feed.insertBefore(div, feed.firstChild);
-  if (feed.children.length > 5) feed.removeChild(feed.lastChild);
+async function submitFollowup() {
+  const adoptionId = Number(document.getElementById('followup-adoption').value);
+  const followupDate = document.getElementById('followup-date').value;
+  const followupType = document.getElementById('followup-type').value;
+  const petCondition = document.getElementById('followup-condition').value.trim();
+  const adopterFeedback = document.getElementById('followup-feedback').value.trim();
+  const resultStatus = document.getElementById('followup-result').value;
+  const staffNote = document.getElementById('followup-note').value.trim();
+  if (!adoptionId || !followupDate || !followupType || !petCondition || !resultStatus) {
+    showToast('Please fill in the required follow-up fields', 'info');
+    return;
+  }
+  try {
+    const result = await apiRequest('/api/follow-ups', {
+      method: 'POST',
+      body: {adoptionId, followupDate, followupType, petCondition, adopterFeedback, resultStatus, staffNote}
+    });
+    closeOverlay('new-followup-overlay');
+    await loadData();
+    showToast(`Follow-up ${result.followUp.id} saved`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
-renderPets(pets);
-renderApps(apps);
+function renderMedical() {
+  const medTb = document.getElementById('medical-tbody');
+  medTb.innerHTML = medicalRecords.length ? medicalRecords.map(r => `<tr>
+    <td style="color:var(--color-text-secondary)">${escapeHtml(r.id)}</td>
+    <td>${escapeHtml(r.pet)}<div class="muted-text">${escapeHtml(entityCode('P', r.petId))}</div></td>
+    <td>${escapeHtml(r.date)}</td>
+    <td>${escapeHtml(r.type)}</td>
+    <td class="note-cell">${escapeHtml(r.diagnosis)}</td>
+    <td class="note-cell">${escapeHtml(r.treatment)}</td>
+    <td>${escapeHtml(r.vet)}</td>
+    <td class="note-cell">${escapeHtml(r.notes)}</td>
+    <td>${actionButtons('medical-records', r.recordId)}</td>
+  </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No medical records found</td></tr>';
+
+  const vaccTb = document.getElementById('vaccination-tbody');
+  vaccTb.innerHTML = vaccinations.length ? vaccinations.map(v => `<tr>
+    <td style="color:var(--color-text-secondary)">${escapeHtml(v.id)}</td>
+    <td>${escapeHtml(v.pet)}<div class="muted-text">${escapeHtml(entityCode('P', v.petId))}</div></td>
+    <td>${escapeHtml(v.vaccine)}</td>
+    <td>${escapeHtml(v.doseNo)}</td>
+    <td>${escapeHtml(v.vaccinationDate)}</td>
+    <td${dueDateStyle(v.dueDate)}>${escapeHtml(v.dueDate)}</td>
+    <td>${escapeHtml(v.vet)}</td>
+    <td class="note-cell">${escapeHtml(v.notes)}</td>
+    <td>${actionButtons('vaccinations', v.vaccinationId)}</td>
+  </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No vaccinations found</td></tr>';
+}
+
+function dueDateStyle(dateText) {
+  if (!dateText) return '';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(`${dateText}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return '';
+  const diffDays = Math.ceil((due - today) / 86400000);
+  if (diffDays < 0) return ' style="color:#A32D2D"';
+  if (diffDays <= 30) return ' style="color:#854F0B"';
+  return '';
+}
+
+function renderVolunteers() {
+  const volunteerTb = document.getElementById('volunteer-tbody');
+  volunteerTb.innerHTML = volunteers.length ? volunteers.map(v => `<tr>
+    <td style="color:var(--color-text-secondary)">${escapeHtml(v.id)}</td>
+    <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">${escapeHtml(initials(v.name))}</div>${escapeHtml(v.name)}</div></td>
+    <td>${escapeHtml(v.phone)}</td>
+    <td>${escapeHtml(v.email)}</td>
+    <td>${escapeHtml(v.shelter)}<div class="muted-text">${escapeHtml(entityCode('S', v.shelterId))}</div></td>
+    <td>${escapeHtml(v.joined)}</td>
+    <td class="note-cell">${escapeHtml(v.availability)}</td>
+    <td>${statusBadge(v.status)}</td>
+    <td>${escapeHtml(v.assignedPets)}</td>
+    <td>${actionButtons('volunteers', v.volunteerId)}</td>
+  </tr>`).join('') : '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No volunteers found</td></tr>';
+
+  const careTb = document.getElementById('care-tbody');
+  careTb.innerHTML = careAssignments.length ? careAssignments.map(c => `<tr>
+    <td style="color:var(--color-text-secondary)">${escapeHtml(c.id)}</td>
+    <td>${escapeHtml(c.date)}</td>
+    <td>${escapeHtml(c.volunteer)}<div class="muted-text">${escapeHtml(entityCode('VLT', c.volunteerId))}</div></td>
+    <td>${escapeHtml(c.pet)}<div class="muted-text">${escapeHtml(entityCode('P', c.petId))}</div></td>
+    <td>${escapeHtml(c.shift)}</td>
+    <td>${escapeHtml(c.task)}</td>
+    <td>${statusBadge(c.status)}</td>
+    <td class="note-cell">${escapeHtml(c.notes)}</td>
+    <td>${actionButtons('care-assignments', c.assignmentId)}</td>
+  </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No care assignments found</td></tr>';
+}
+
+function renderAnalytics() {
+  const data = analytics || {};
+  document.getElementById('analytics-occupancy-tbody').innerHTML = renderTableRows(
+    data.occupancy,
+    4,
+    row => `<tr>
+      <td>${escapeHtml(row.shelter)}</td>
+      <td>${escapeHtml(row.currentPetCount)}</td>
+      <td>${escapeHtml(row.capacity)}</td>
+      <td>${escapeHtml(formatPercent(row.occupancyRate))}</td>
+    </tr>`
+  );
+
+  document.getElementById('analytics-housing-tbody').innerHTML = renderTableRows(
+    data.housingApproval,
+    4,
+    row => `<tr>
+      <td>${escapeHtml(row.housingType)}</td>
+      <td>${escapeHtml(row.totalApplications)}</td>
+      <td>${escapeHtml(row.approvedCount)}</td>
+      <td>${escapeHtml(formatPercent(row.approvalRate))}</td>
+    </tr>`
+  );
+
+  document.getElementById('analytics-species-tbody').innerHTML = renderTableRows(
+    data.speciesDemand,
+    4,
+    row => `<tr>
+      <td>${escapeHtml(row.species)}</td>
+      <td>${escapeHtml(row.totalApplications)}</td>
+      <td>${escapeHtml(row.successfulAdoptions)}</td>
+      <td>${escapeHtml(formatPercent(row.adoptionSuccessRate))}</td>
+    </tr>`
+  );
+
+  document.getElementById('analytics-followup-tbody').innerHTML = renderTableRows(
+    data.followupOutcomes,
+    2,
+    row => `<tr>
+      <td>${escapeHtml(row.resultStatus)}</td>
+      <td>${escapeHtml(row.totalFollowups)}</td>
+    </tr>`
+  );
+
+  document.getElementById('analytics-longstay-tbody').innerHTML = renderTableRows(
+    data.longStayPets,
+    6,
+    row => `<tr>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(row.id)}</td>
+      <td style="font-weight:500">${escapeHtml(row.name)}</td>
+      <td>${escapeHtml(row.species)}</td>
+      <td>${escapeHtml(row.breed)}</td>
+      <td style="color:var(--color-text-secondary)">${escapeHtml(row.intakeDate)}</td>
+      <td>${escapeHtml(row.daysInShelter)}</td>
+    </tr>`
+  );
+
+  document.getElementById('analytics-workload-tbody').innerHTML = renderTableRows(
+    data.volunteerWorkload,
+    5,
+    row => `<tr>
+      <td style="font-weight:500">${escapeHtml(row.name)}</td>
+      <td>${escapeHtml(row.totalAssignments)}</td>
+      <td>${escapeHtml(row.completedTasks)}</td>
+      <td>${escapeHtml(row.scheduledTasks)}</td>
+      <td>${escapeHtml(row.cancelledTasks)}</td>
+    </tr>`
+  );
+}
+
+function renderTableRows(rows, colspan, renderRow) {
+  return rows?.length
+    ? rows.map(renderRow).join('')
+    : `<tr><td colspan="${colspan}" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No data found</td></tr>`;
+}
+
+function formatPercent(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '-';
+  return `${n.toFixed(n % 1 === 0 ? 0 : 2)}%`;
+}
+
+function formatMoney(value) {
+  if (value == null || value === '') return '-';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '-';
+  return `$${n.toFixed(2)}`;
+}
+
+function renderLlmBonus() {
+  const data = llmBonus || {};
+  const summary = data.summary || {};
+  document.getElementById('llm-refinement-count').textContent = summary.architectureRefinementCount ?? '--';
+  document.getElementById('llm-check-count').textContent = summary.integrityCheckCount ?? '--';
+  document.getElementById('llm-finding-count').textContent = summary.openFindingCount ?? '--';
+  document.getElementById('llm-query-count').textContent = summary.safeReadOnlyQueryCount ?? '--';
+
+  document.getElementById('llm-refinement-tbody').innerHTML = renderTableRows(
+    data.architectureRefinements,
+    5,
+    row => `<tr>
+      <td style="font-weight:500">${escapeHtml(row.area)}</td>
+      <td>${escapeHtml(row.originalDesign)}</td>
+      <td>${escapeHtml(row.llmRefinement)}</td>
+      <td>${escapeHtml(row.implementation)}</td>
+      <td>${escapeHtml(row.benefit)}</td>
+    </tr>`
+  );
+
+  document.getElementById('llm-audit-tbody').innerHTML = renderTableRows(
+    data.integrityAudit,
+    5,
+    row => `<tr>
+      <td><div style="font-weight:500">${escapeHtml(row.title)}</div><div class="muted-text">${escapeHtml(row.llmRationale)}</div></td>
+      <td>${escapeHtml(row.severity)}</td>
+      <td>${statusBadge(row.status)}</td>
+      <td>${escapeHtml(row.findingCount)}</td>
+      <td>${escapeHtml(row.refinement)}</td>
+    </tr>`
+  );
+
+  document.getElementById('llm-constraint-tbody').innerHTML = renderTableRows(
+    data.refinedConstraints,
+    3,
+    row => `<tr>
+      <td style="font-weight:500">${escapeHtml(row.name)}</td>
+      <td><code>${escapeHtml(row.sql)}</code></td>
+      <td>${escapeHtml(row.reason)}</td>
+    </tr>`
+  );
+
+  document.getElementById('llm-prompt-tbody').innerHTML = renderTableRows(
+    data.promptPatterns,
+    3,
+    row => `<tr>
+      <td style="font-weight:500">${escapeHtml(row.pattern)}</td>
+      <td>${escapeHtml(row.prompt)}<div class="muted-text">${escapeHtml(row.routingLogic)}</div></td>
+      <td><code>${escapeHtml(row.expectedQuery)}</code></td>
+    </tr>`
+  );
+
+  document.getElementById('llm-catalog-tbody').innerHTML = renderTableRows(
+    data.queryCatalog,
+    4,
+    row => `<tr>
+      <td><code>${escapeHtml(row.name)}</code></td>
+      <td>${escapeHtml(row.category)}</td>
+      <td>${statusBadge(row.readOnly ? 'Yes' : 'No')}</td>
+      <td>${escapeHtml(row.description)}</td>
+    </tr>`
+  );
+}
+
+async function submitLlmPrompt() {
+  const input = document.getElementById('llm-prompt-input');
+  const prompt = input.value.trim();
+  if (!prompt) {
+    showToast('Please enter a natural language prompt', 'info');
+    return;
+  }
+  try {
+    const result = await apiRequest('/api/llm-query', {
+      method: 'POST',
+      body: {prompt}
+    });
+    renderLlmQueryResult(result);
+    showToast(`Matched ${result.matchedQuery.name}`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function renderLlmQueryResult(result) {
+  const summary = document.getElementById('llm-query-summary');
+  summary.style.display = 'block';
+  summary.innerHTML = `<strong>${escapeHtml(result.matchedQuery.title)}</strong><br><span class="muted-text">${escapeHtml(result.safetyModel)} Returned ${escapeHtml(result.rowCount)} rows.</span>`;
+
+  const sqlBlock = document.getElementById('llm-query-sql');
+  sqlBlock.style.display = 'block';
+  sqlBlock.textContent = result.matchedQuery.sql;
+
+  const head = document.getElementById('llm-query-head');
+  const body = document.getElementById('llm-query-body');
+  const rows = result.rows || [];
+  if (!rows.length) {
+    head.innerHTML = '';
+    body.innerHTML = '<tr><td style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No rows returned</td></tr>';
+    return;
+  }
+  const columns = Object.keys(rows[0]);
+  head.innerHTML = `<tr>${columns.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr>`;
+  body.innerHTML = rows.map(row => `<tr>${columns.map(col => `<td>${escapeHtml(row[col])}</td>`).join('')}</tr>`).join('');
+}
+
+function initials(name) {
+  return String(name || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0].toUpperCase())
+    .join('') || '?';
+}
+
+function renderLoadError(message) {
+  document.getElementById('dash-total-pets').textContent = '--';
+  document.getElementById('dash-shelter-count').textContent = 'backend unavailable';
+  document.getElementById('activity-feed').innerHTML = `<div class="activity-item"><div class="activity-dot dot-amber"></div><div><div class="activity-text">${escapeHtml(message)}</div><div class="activity-time">Start the API server</div></div></div>`;
+  document.getElementById('shelter-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('pet-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('applicant-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('app-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('adoption-record-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('followup-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('medical-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('vaccination-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('volunteer-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  document.getElementById('care-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  ['analytics-occupancy-tbody','analytics-housing-tbody','analytics-species-tbody','analytics-followup-tbody','analytics-longstay-tbody','analytics-workload-tbody'].forEach(id => {
+    const tb = document.getElementById(id);
+    if (tb) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  });
+  ['llm-refinement-tbody','llm-audit-tbody','llm-constraint-tbody','llm-prompt-tbody','llm-catalog-tbody'].forEach(id => {
+    const tb = document.getElementById(id);
+    if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
+  });
+}
+
+document.getElementById('form-applicant').addEventListener('change', syncHousingFromApplicant);
+document.getElementById('llm-prompt-input').addEventListener('keydown', event => {
+  if (event.key === 'Enter') submitLlmPrompt();
+});
+loadData().catch(err => {
+  renderLoadError(err.message);
+  showToast(`Could not load backend data: ${err.message}`, 'error');
+});
 </script>
 </body>
 </html>

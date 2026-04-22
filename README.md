@@ -66,16 +66,27 @@ Suggested content:
  
 ## Backend & SQL Queries
  
-> *To be completed by the backend member.*
- 
-<!--
-Suggested content:
-- Tech stack used (e.g., Python/Flask, Node.js/Express, etc.)
-- Database system used (e.g., MySQL, PostgreSQL, SQLite)
-- How to set up and run the backend server
-- Operational SQL queries (Project requirement #6)
-- Analytical/data mining queries if applicable (Project requirement #7)
--->
+The browser-facing backend is implemented in `src/web_server.py` using Python's standard library HTTP server and SQLite. On first run, it creates `pet_database.db` from `src/schema/table.sql` and imports the seed records from `data/*.csv`.
+
+The API exposes JSON endpoints for the frontend modules:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/dashboard` | Dashboard statistics, pet status overview, recent activity |
+| `GET /api/analytics` | Occupancy, long-stay pets, approval rates, species demand, volunteer workload, follow-up outcomes |
+| `GET /api/pets` | Pet list joined with shelter names |
+| `GET /api/applicants` | Applicant dropdown data |
+| `GET /api/applications` | Adoption applications joined with applicant and pet names |
+| `POST /api/applications` | Create a new pending application and reserve the selected pet |
+| `PATCH /api/applications/{id}/review` | Approve or reject a pending application |
+| `GET /api/medical-records` | Medical visit history |
+| `GET /api/vaccinations?upcoming=true` | Vaccination due dates |
+| `GET /api/volunteers` | Volunteer roster with assigned pets |
+| `GET /api/care-assignments` | Care assignment schedule |
+| `GET /api/llm-bonus` | LLM-assisted design refinement, integrity audit, prompt patterns, query catalog |
+| `POST /api/llm-query` | Safe natural-language query routing to predefined read-only SQL |
+
+The existing MCP server in `src/mcp_server.py` is kept for the LLM/database bonus workflow and uses the same SQLite database file.
  
 ---
  
@@ -94,22 +105,21 @@ The demo covers five core modules drawn directly from the ER schema:
 | Adoption applications | `ADOPTION_APPLICATION`, `APPLICANT` | New application form, application review (Approve / Reject) |
 | Medical records | `MEDICAL_RECORD`, `VACCINATION` | Visit history, upcoming vaccination due dates |
 | Volunteers | `VOLUNTEER`, `CARE_ASSIGNMENT` | Volunteer roster, daily care assignment schedule |
+| Analytics | All core entities | Occupancy, long-stay, approval-rate, demand, workload, and follow-up analysis |
  
-### Mock data strategy
+### API integration strategy
  
-Because the backend was developed in parallel, the demo uses **in-memory mock data** defined as JavaScript arrays at the top of the file. Every data operation (filtering, status updates, new record creation) runs against these arrays in the browser.
- 
-This approach was chosen deliberately so that replacing mock data with real API calls requires only minimal changes — each data-fetching logic is isolated in dedicated functions. For example, swapping `renderPets(pets)` for a `fetch('/api/pets')` call does not require changes to any rendering or UI logic.
+The demo now loads its data through `fetch('/api/...')` calls instead of browser-side mock arrays. Search and filtering still run client-side for responsiveness, while mutations such as creating an adoption application and reviewing an application are sent to the backend and persisted in SQLite.
  
 ### Key interactions
  
 **Submitting a new adoption application**
  
-Clicking `+ New application` opens a modal form. The pet dropdown is dynamically populated with only `Available` pets, enforcing the business rule from the ER design that a reserved or adopted pet cannot receive new applications. On submission, the selected pet's status is updated to `Reserved`, mirroring the SQL transaction:
+Clicking `+ New application` opens a modal form. The pet dropdown is dynamically populated with only `Available` pets, enforcing the business rule from the ER design that a reserved or adopted pet cannot receive new applications. On submission, the selected pet's status is updated to `reserved`, mirroring the SQL transaction:
  
 ```sql
 INSERT INTO ADOPTION_APPLICATION (applicant_id, pet_id, ...) VALUES (...);
-UPDATE PET SET status = 'Reserved' WHERE pet_id = ?;
+UPDATE PET SET status = 'reserved' WHERE pet_id = ?;
 ```
  
 **Reviewing a pending application**
@@ -125,69 +135,68 @@ WHERE application_id = ?;
 ### File structure
  
 ```
-pawtrack_demo.html      ← the entire frontend (single file, no dependencies)
+pawtrack_demo.html      ← frontend single-page interface
+src/web_server.py       ← HTTP JSON API and SQLite initializer
+pet_database.db         ← generated locally on first backend run
 ```
  
 ### How to open
  
-Simply open `pawtrack_demo.html` in any modern browser. No server, installation, or internet connection is required.
+Start the backend server, then open the frontend URL it prints:
  
 ```bash
-# macOS
-open pawtrack_demo.html
- 
-# Windows
-start pawtrack_demo.html
- 
-# Linux
-xdg-open pawtrack_demo.html
+python3 src/web_server.py
 ```
  
-The file is fully self-contained and works correctly when opened directly via `file://`. All CSS variables are defined inline, so the interface renders consistently regardless of the environment.
+Then visit `http://127.0.0.1:8000/pawtrack_demo.html`. If the HTML file is opened directly with `file://`, it will still try to connect to `http://127.0.0.1:8000`.
  
 ---
  
 ## Bonus
  
-> *To be completed by the bonus member.*
- 
-<!--
-Indicate which bonus option was chosen:
-  Option A — LLM + Database
-  Option B — Security & Privacy + Database
- 
-Then describe the implementation.
--->
+This project chooses **Option A — LLM + Database**.
+
+The implementation has two parts:
+
+1. **LLM-assisted database architecture refinement**
+   - `GET /api/llm-bonus` returns a documented comparison between the original schema design and the refined design.
+   - The refinement covers controlled status domains, workflow consistency, anomaly detection, efficient access paths, and safe LLM query routing.
+   - The backend runs integrity and anomaly checks such as invalid status values, reserved pets without pending applications, capacity overflow, and adoption records linked to non-approved applications.
+
+2. **Prompt-guided database querying**
+   - `POST /api/llm-query` accepts a natural-language prompt and routes it to a reviewed predefined `SELECT` query from `src/queries`.
+   - The system deliberately avoids executing arbitrary LLM-generated SQL.
+   - `src/mcp_server.py` exposes the same query registry through MCP tools: `list_available_queries`, `execute_named_query`, and `natural_language_query`.
+
+The frontend includes an **LLM Bonus** page that displays the refinement comparison, integrity audit, prompt engineering patterns, query catalog, and an interactive natural-language query assistant.
+
+Detailed bonus documentation is in `src/LLM_DATABASE_BONUS.md`.
  
 ---
  
 ## How to Run
  
-> *To be completed once backend is ready.*
- 
-<!--
-Suggested structure:
- 
 ### Prerequisites
-- [e.g., Python 3.10+, Node.js 18+, MySQL 8.0+]
+- Python 3.10+
  
-### 1. Set up the database
+### 1. Install optional MCP dependency
 ```bash
-mysql -u root -p < sql/schema.sql
-mysql -u root -p < sql/seed.sql
+pip install -r requirements.txt
 ```
  
 ### 2. Start the backend server
 ```bash
-cd backend
-pip install -r requirements.txt
-python app.py
+python3 src/web_server.py
 ```
  
+To rebuild the SQLite database from the CSV seed files:
+
+```bash
+python3 src/web_server.py --reset-db
+```
+
 ### 3. Open the frontend
-Navigate to http://localhost:5000 in your browser,
-or open pawtrack_demo.html directly for the standalone demo.
--->
+Navigate to `http://127.0.0.1:8000/pawtrack_demo.html` in your browser.
 
 ---
 
@@ -259,16 +268,27 @@ or open pawtrack_demo.html directly for the standalone demo.
 
 ## 后端与 SQL 查询
 
-> **
+面向浏览器前端的后端服务位于 `src/web_server.py`，使用 Python 标准库 HTTP Server + SQLite 实现。首次启动时，服务会读取 `src/schema/table.sql` 建表，并从 `data/*.csv` 导入种子数据，生成本地数据库 `pet_database.db`。
 
-<!--
-建议包含以下内容：
-- 技术栈说明（如 Python/Flask、Node.js/Express 等）
-- 数据库系统说明（如 MySQL、PostgreSQL、SQLite）
-- 后端服务器的搭建与启动方式
-- 日常操作类 SQL 查询（对应项目要求第 6 项）
-- 分析/数据挖掘类 SQL 查询（对应项目要求第 7 项，如适用）
--->
+主要接口如下：
+
+| 接口 | 用途 |
+|------|------|
+| `GET /api/dashboard` | 仪表盘统计、宠物状态分布、近期动态 |
+| `GET /api/analytics` | 入住率、长期滞留、批准率、物种需求、志愿者工作量、跟进结果分析 |
+| `GET /api/pets` | 宠物列表，并关联收容所名称 |
+| `GET /api/applicants` | 申请人下拉列表数据 |
+| `GET /api/applications` | 领养申请列表，并关联申请人和宠物名称 |
+| `POST /api/applications` | 新建待审核申请，同时将宠物状态更新为 reserved |
+| `PATCH /api/applications/{id}/review` | 通过或拒绝待审核申请 |
+| `GET /api/medical-records` | 医疗访问记录 |
+| `GET /api/vaccinations?upcoming=true` | 疫苗到期提醒 |
+| `GET /api/volunteers` | 志愿者列表及分配宠物 |
+| `GET /api/care-assignments` | 护理任务排班 |
+| `GET /api/llm-bonus` | LLM 辅助设计优化、完整性审计、prompt 模式、查询目录 |
+| `POST /api/llm-query` | 将自然语言安全路由到预定义只读 SQL 查询 |
+
+原有的 `src/mcp_server.py` 仍保留，用于 LLM 与数据库结合的加分项流程，并复用同一个 SQLite 数据库文件。
 
 ---
 
@@ -287,12 +307,11 @@ or open pawtrack_demo.html directly for the standalone demo.
 | 领养申请 | `ADOPTION_APPLICATION`、`APPLICANT` | 新建申请表单，申请审核（通过 / 拒绝） |
 | 医疗记录 | `MEDICAL_RECORD`、`VACCINATION` | 医疗访问历史，即将到期的疫苗接种提醒 |
 | 志愿者管理 | `VOLUNTEER`、`CARE_ASSIGNMENT` | 志愿者名单，当日护理分配排班 |
+| 分析面板 | 核心业务实体 | 入住率、长期滞留、批准率、领养需求、工作量与跟进结果分析 |
 
-### Mock 数据策略
+### API 对接策略
 
-由于前后端并行开发，演示页面采用**内存中的 Mock 数据**，以 JavaScript 数组的形式定义在文件顶部。所有数据操作（筛选、状态更新、新建记录）均在浏览器内对这些数组执行，无需连接真实数据库。
-
-这一策略的核心优势在于：将数据获取逻辑集中封装在独立函数中，未来接入真实后端时，只需将对应函数的返回值替换为 `fetch('/api/...')` 的响应结果，页面的渲染逻辑和交互逻辑均无需改动。
+演示页面已改为通过 `fetch('/api/...')` 从后端读取真实数据，不再依赖浏览器内写死的 Mock 数组。搜索和筛选仍保留在前端执行以提升响应速度；新建领养申请、审核申请等会改变数据的操作，则会发送到后端并持久化到 SQLite。
 
 ### 核心交互说明
 
@@ -300,14 +319,14 @@ or open pawtrack_demo.html directly for the standalone demo.
 
 点击 `+ New application` 按钮打开表单弹窗。宠物下拉列表会动态过滤，仅显示状态为 `Available` 的宠物，从前端层面落实了 ER 设计中"已预留或已领养的宠物不可接受新申请"的业务规则。
 
-提交后，所选宠物的状态将同步更新为 `Reserved`，对应以下数据库事务：
+提交后，所选宠物的状态将同步更新为 `reserved`，对应以下数据库事务：
 
 ```sql
 INSERT INTO ADOPTION_APPLICATION (applicant_id, pet_id, application_date, reason, status)
-VALUES (?, ?, ?, ?, 'Pending');
+VALUES (?, ?, ?, ?, 'Under Review');
 
 UPDATE PET
-SET status = 'Reserved'
+SET status = 'reserved'
 WHERE pet_id = ?;
 ```
 
@@ -329,66 +348,65 @@ WHERE application_id = ?;
 ### 文件结构
 
 ```
-pawtrack_demo.html      ← 完整前端（单文件，零依赖）
+pawtrack_demo.html      ← 前端单页界面
+src/web_server.py       ← HTTP JSON API 与 SQLite 初始化逻辑
+pet_database.db         ← 后端首次启动后本地生成
 ```
 
 ### 打开方式
 
-直接用任意现代浏览器打开 `pawtrack_demo.html` 即可，无需服务器、无需安装任何依赖、无需网络连接。
+先启动后端服务：
 
 ```bash
-# macOS
-open pawtrack_demo.html
-
-# Windows
-start pawtrack_demo.html
-
-# Linux
-xdg-open pawtrack_demo.html
+python3 src/web_server.py
 ```
 
-文件完全自包含，通过 `file://` 协议直接打开时界面显示正常。所有 CSS 变量均在文件内部定义，不依赖外部环境注入，深色模式（`prefers-color-scheme: dark`）同样受支持。
+然后在浏览器中访问 `http://127.0.0.1:8000/pawtrack_demo.html`。如果直接用 `file://` 打开 HTML，它也会尝试连接 `http://127.0.0.1:8000` 的后端接口。
 
 ---
 
 ## 附加加分项
 
-> **
+本项目选择 **方案一：大语言模型（LLM）与数据库结合**。
 
-<!--
-请注明选择的加分方案：
-  方案一 — 大语言模型（LLM）与数据库结合
-  方案二 — 安全与隐私保护结合数据库
+实现分为两个部分：
 
-然后描述具体实现内容。
--->
+1. **LLM 辅助数据库架构优化**
+   - `GET /api/llm-bonus` 返回原始设计与优化后设计的对比。
+   - 优化内容包括状态字段约束、业务流程一致性、异常数据检测、高频访问索引、安全查询路由等。
+   - 后端会检测异常情况，例如非法状态值、reserved 宠物没有待审核申请、收容所超容量、领养记录关联非 approved 申请等。
+
+2. **Prompt 引导的数据库查询**
+   - `POST /api/llm-query` 接收自然语言问题，并将其路由到 `src/queries` 中经过审核的预定义 `SELECT` 查询。
+   - 系统不执行任意 LLM 生成的 SQL，从而降低 SQL 注入、表名幻觉和误更新风险。
+   - `src/mcp_server.py` 同时通过 MCP 提供 `list_available_queries`、`execute_named_query` 和 `natural_language_query`。
+
+前端新增 **LLM Bonus** 页面，用于展示架构优化对比、完整性审计、prompt 设计模式、查询目录，以及交互式自然语言查询助手。
+
+详细说明见 `src/LLM_DATABASE_BONUS.md`。
 
 ---
 
 ## 运行说明
 
-> **
-
-<!--
-建议结构如下：
-
 ### 环境要求
-- [例如：Python 3.10+、Node.js 18+、MySQL 8.0+]
+- Python 3.10+
 
-### 第一步：初始化数据库
+### 第一步：安装可选 MCP 依赖
 ```bash
-mysql -u root -p < sql/schema.sql
-mysql -u root -p < sql/seed.sql
+pip install -r requirements.txt
 ```
 
 ### 第二步：启动后端服务器
 ```bash
-cd backend
-pip install -r requirements.txt
-python app.py
+python3 src/web_server.py
+```
+
+如需重新从 CSV 种子数据生成数据库：
+
+```bash
+python3 src/web_server.py --reset-db
 ```
 
 ### 第三步：打开前端页面
-在浏览器中访问 http://localhost:5000，
-或直接打开 pawtrack_demo.html 使用独立演示版本。
--->
+在浏览器中访问 `http://127.0.0.1:8000/pawtrack_demo.html`。
