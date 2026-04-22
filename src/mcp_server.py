@@ -3,24 +3,25 @@ Pet Database MCP Server
 
 Exposes pre-defined SQL queries from src/queries/ as callable MCP tools,
 allowing an external LLM to query the pet adoption center database via natural language.
-Only queries defined in src/queries/ can be executed — no arbitrary SQL allowed.
+Only queries defined in src/queries/ can be executed; no arbitrary SQL is allowed.
 """
 
 import re
 import sqlite3
-from pathlib import Path
 from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
 from typing import Any
 
 from mcp.server import Server
 from mcp.types import Tool, TextContent
 from mcp import stdio_server
 
-# ── Database ──────────────────────────────────────────────────────────────────
+# Database
 
 DB_PATH = Path(__file__).parent.parent / "pet_database.db"
 
-# ── Query Registry ─────────────────────────────────────────────────────────────
+# Query Registry
 
 @dataclass
 class StoredQuery:
@@ -37,7 +38,7 @@ def load_queries() -> list[StoredQuery]:
         category = sql_file.stem.replace("_queries", "").replace("_", " ")
         raw = sql_file.read_text()
         parsed = parse_sql_file(raw, category)
-        queries.extend(parsed)
+        queries.extend(q for q in parsed if is_read_only_sql(q.sql))
 
     return queries
 
@@ -76,7 +77,7 @@ def slugify(text: str) -> str:
     text = re.sub(r"[_\s]+", "_", text)
     return text.strip("-_")
 
-# ── Query Execution ────────────────────────────────────────────────────────────
+# Query Execution
 
 def normalize_sql(sql: str) -> str:
     """Convert MySQL-specific SQL to SQLite-compatible SQL.
@@ -84,15 +85,27 @@ def normalize_sql(sql: str) -> str:
     Must apply DATE_ADD/DATEDIFF before CURDATE, since CURDATE replacement
     would break the patterns that contain CURDATE().
     """
+    today = date.today().isoformat()
+
     def date_add_matcher(m):
         val, unit = m.group(1), m.group(2).lower()
-        return f"date('now', '+{val} {unit}')"
+        return f"date('{today}', '+{val} {unit}')"
     sql = re.sub(r"DATE_ADD\(CURDATE\(\),\s*INTERVAL\s+(\d+)\s+(DAY|MONTH|YEAR)\)", date_add_matcher, sql, flags=re.IGNORECASE)
-    sql = re.sub(r"\bDATEDIFF\(CURDATE\(\),\s*(\w+)\)", r"(cast(julianday('now') - julianday(\1) as integer))", sql, flags=re.IGNORECASE)
-    sql = re.sub(r'\bCURDATE\(\)', "date('now')", sql, flags=re.IGNORECASE)
+    sql = re.sub(
+        r"\bDATEDIFF\(CURDATE\(\),\s*(\w+)\)",
+        rf"(cast(julianday('{today}') - julianday(\1) as integer))",
+        sql,
+        flags=re.IGNORECASE,
+    )
+    sql = re.sub(r"\bCURDATE\(\)", f"date('{today}')", sql, flags=re.IGNORECASE)
     return sql
 
+def is_read_only_sql(sql: str) -> bool:
+    return sql.lstrip().upper().startswith("SELECT")
+
 def execute_query(sql: str) -> list[dict[str, Any]]:
+    if not is_read_only_sql(sql):
+        raise ValueError("Only predefined read-only SELECT queries can be executed through MCP.")
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -101,7 +114,7 @@ def execute_query(sql: str) -> list[dict[str, Any]]:
     conn.close()
     return [dict(row) for row in rows]
 
-# ── MCP Server ─────────────────────────────────────────────────────────────────
+# MCP Server
 
 APP_NAME = "pet-database-mcp"
 APP_VERSION = "1.0.0"

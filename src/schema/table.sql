@@ -6,7 +6,7 @@ CREATE TABLE SHELTER (
     name VARCHAR(100) NOT NULL,
     address VARCHAR(255),
     phone VARCHAR(20),
-    capacity INT NOT NULL
+    capacity INT NOT NULL CHECK (capacity > 0)
 );
 
 
@@ -17,7 +17,7 @@ CREATE TABLE APPLICANT (
     applicant_id INT PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
-    email VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
     address VARCHAR(255),
     housing_type VARCHAR(50),
     has_pet_experience BOOLEAN,
@@ -34,7 +34,7 @@ CREATE TABLE VOLUNTEER (
     shelter_id INT NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
-    email VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
     join_date DATE,
     availability_note VARCHAR(255),
     CONSTRAINT fk_volunteer_shelter
@@ -50,15 +50,17 @@ CREATE TABLE PET (
     pet_id INT PRIMARY KEY,
     shelter_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
-    species VARCHAR(50) NOT NULL,
+    species VARCHAR(50) NOT NULL CHECK (species IN ('Dog', 'Cat', 'Rabbit', 'Bird')),
     breed VARCHAR(50),
-    sex VARCHAR(20),
+    sex VARCHAR(20) CHECK (sex IS NULL OR sex IN ('Male', 'Female', 'Unknown')),
     color VARCHAR(50),
     estimated_birth_date DATE,
     intake_date DATE NOT NULL,
-    status VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL CHECK (status IN ('available', 'reserved', 'adopted', 'medical_hold')),
     is_sterilized BOOLEAN,
     special_needs VARCHAR(255),
+    CONSTRAINT chk_pet_birth_before_intake
+        CHECK (estimated_birth_date IS NULL OR date(estimated_birth_date) <= date(intake_date)),
     CONSTRAINT fk_pet_shelter
         FOREIGN KEY (shelter_id) REFERENCES SHELTER(shelter_id)
 );
@@ -72,11 +74,13 @@ CREATE TABLE VACCINATION (
     vaccination_id INT PRIMARY KEY,
     pet_id INT NOT NULL,
     vaccine_name VARCHAR(100) NOT NULL,
-    dose_no INT,
+    dose_no INT CHECK (dose_no IS NULL OR dose_no > 0),
     vaccination_date DATE NOT NULL,
     next_due_date DATE,
     vet_name VARCHAR(100),
     notes VARCHAR(255),
+    CONSTRAINT chk_vaccination_due_date
+        CHECK (next_due_date IS NULL OR date(next_due_date) >= date(vaccination_date)),
     CONSTRAINT fk_vaccination_pet
         FOREIGN KEY (pet_id) REFERENCES PET(pet_id)
 );
@@ -109,10 +113,12 @@ CREATE TABLE CARE_ASSIGNMENT (
     volunteer_id INT NOT NULL,
     pet_id INT NOT NULL,
     assignment_date DATE NOT NULL,
-    shift VARCHAR(50),
-    task_type VARCHAR(50),
-    status VARCHAR(50),
+    shift VARCHAR(50) NOT NULL CHECK (shift IN ('Morning', 'Afternoon', 'Evening')),
+    task_type VARCHAR(50) NOT NULL CHECK (task_type IN ('Cleaning', 'Feeding', 'Grooming', 'Socializing', 'Walking', 'Medical support')),
+    status VARCHAR(50) NOT NULL CHECK (status IN ('Scheduled', 'Completed', 'Cancelled')),
     notes VARCHAR(255),
+    CONSTRAINT uq_care_assignment_slot
+        UNIQUE (volunteer_id, pet_id, assignment_date, shift),
     CONSTRAINT fk_care_assignment_volunteer
         FOREIGN KEY (volunteer_id) REFERENCES VOLUNTEER(volunteer_id),
     CONSTRAINT fk_care_assignment_pet
@@ -129,7 +135,7 @@ CREATE TABLE ADOPTION_APPLICATION (
     applicant_id INT NOT NULL,
     pet_id INT NOT NULL,
     application_date DATE NOT NULL,
-    status VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL CHECK (status IN ('Under Review', 'Approved', 'Rejected')),
     reason VARCHAR(255),
     reviewed_date DATE,
     reviewer_name VARCHAR(100),
@@ -147,9 +153,9 @@ CREATE TABLE ADOPTION_APPLICATION (
 -- =========================================
 CREATE TABLE ADOPTION_RECORD (
     adoption_id INT PRIMARY KEY,
-    application_id INT NOT NULL,
+    application_id INT NOT NULL UNIQUE,
     adoption_date DATE NOT NULL,
-    final_adoption_fee DECIMAL(10,2),
+    final_adoption_fee DECIMAL(10,2) CHECK (final_adoption_fee IS NULL OR final_adoption_fee >= 0),
     handover_note VARCHAR(255),
     CONSTRAINT fk_adoption_record_application
         FOREIGN KEY (application_id) REFERENCES ADOPTION_APPLICATION(application_id)
@@ -164,10 +170,10 @@ CREATE TABLE FOLLOW_UP (
     followup_id INT PRIMARY KEY,
     adoption_id INT NOT NULL,
     followup_date DATE NOT NULL,
-    followup_type VARCHAR(50),
-    pet_condition VARCHAR(255),
+    followup_type VARCHAR(50) NOT NULL CHECK (followup_type IN ('Phone Check', 'Home Visit', 'Vet Check')),
+    pet_condition VARCHAR(255) NOT NULL,
     adopter_feedback VARCHAR(255),
-    result_status VARCHAR(50),
+    result_status VARCHAR(50) NOT NULL CHECK (result_status IN ('Excellent', 'Good', 'Satisfactory', 'Needs Improvement')),
     staff_note VARCHAR(255),
     CONSTRAINT fk_follow_up_adoption
         FOREIGN KEY (adoption_id) REFERENCES ADOPTION_RECORD(adoption_id)
