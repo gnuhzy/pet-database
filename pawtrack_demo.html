@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+
 :root {
   --color-background-primary: #ffffff;
   --color-background-secondary: #f8f9fa;
@@ -32,12 +33,12 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'SFMono-Regular', Consolas, monospace;
   --border-radius-sm: 6px;
-  --border-radius-md: 10px;
-  --border-radius-lg: 16px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 20px;
   --border-radius-xl: 24px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-md: 0 8px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 16px 32px rgba(0,0,0,0.08);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -64,17 +65,17 @@
 html,body{height:100%;background:var(--color-background-tertiary)}
 body{font-family:var(--font-sans);color:var(--color-text-primary);-webkit-font-smoothing:antialiased}
 code{font-family:var(--font-mono);font-size:0.85em;background:var(--color-background-secondary);padding:0.2em 0.4em;border-radius:var(--border-radius-sm);color:var(--color-primary)}
-.app{display:flex;height:100vh;overflow:hidden;background-color:var(--color-background-tertiary);background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px); background-size: 20px 20px;}
-.sidebar{width:250px;flex-shrink:0;background:rgba(255, 255, 255, 0.85);backdrop-filter:blur(10px);border-right:1px solid rgba(255, 255, 255, 0.4);padding:1.5rem 0.75rem;display:flex;flex-direction:column;overflow-y:auto;box-shadow:var(--shadow-md);z-index:10}
+.app{display:flex;height:100vh;overflow:hidden;background-color:var(--color-background-tertiary);background-image: radial-gradient(at 0% 0%, hsla(28,100%,74%,0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(28,100%,74%,0.1) 0px, transparent 50%), radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 20px 20px;}
+.sidebar{width:250px;flex-shrink:0;background:rgba(255, 255, 255, 0.6);backdrop-filter:blur(24px);border-right:1px solid rgba(255, 255, 255, 0.7);padding:1.5rem 0.75rem;display:flex;flex-direction:column;overflow-y:auto;box-shadow:var(--shadow-md);z-index:10}
 @media (prefers-color-scheme: dark) {
-  .app{background-color:#1a1b1e; background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 20px 20px;}
-  .sidebar{background:rgba(37, 38, 43, 0.85);border-right:1px solid rgba(255, 255, 255, 0.05)}
+  .app{background-color:#1a1b1e; background-image: radial-gradient(at 0% 0%, hsla(28,100%,74%,0.1) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(28,100%,74%,0.05) 0px, transparent 50%), radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 20px 20px;}
+  .sidebar{background:rgba(37, 38, 43, 0.6);border-right:1px solid rgba(255, 255, 255, 0.05)}
 }
 .sidebar-logo{padding:0 0.75rem 1.5rem;margin-bottom:0.5rem;display:flex;flex-direction:column;gap:4px}
 .sidebar-logo p{font-size:12px;color:var(--color-text-tertiary);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;background:-webkit-linear-gradient(0deg, var(--color-primary), #e8590c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .sidebar-logo h2{font-size:20px;font-weight:800;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;letter-spacing:-0.5px}
 .sidebar-logo h2::before {content:'';display:block;width:14px;height:14px;background:linear-gradient(135deg, var(--color-primary) 0%, #d9480f 100%);border-radius:50%;box-shadow:0 2px 4px rgba(247,103,7,0.3)}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 14px;font-size:14px;font-weight:500;cursor:pointer;color:var(--color-text-secondary);transition:all 0.2s ease;user-select:none;border-radius:var(--border-radius-md);margin-bottom:4px;border:1px solid transparent}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 14px;font-size:14px;font-weight:500;cursor:pointer;color:var(--color-text-secondary);transition:all 0.2s ease;user-select:none;border-radius:var(--border-radius-lg);margin-bottom:6px;padding:12px 16px;border:1px solid transparent}
 .nav-item:hover{background:rgba(248, 249, 250, 0.8);color:var(--color-text-primary);transform:translateX(2px)}
 @media (prefers-color-scheme: dark) {
   .nav-item:hover{background:rgba(37, 38, 43, 0.8)}
@@ -92,9 +93,9 @@ code{font-family:var(--font-mono);font-size:0.85em;background:var(--color-backgr
 .page-title{font-size:28px;font-weight:800;margin-bottom:2rem;color:var(--color-text-primary);letter-spacing:-0.5px;position:relative;display:inline-block}
 .page-title::after{content:'';position:absolute;bottom:-8px;left:0;width:40px;height:4px;background:linear-gradient(90deg, var(--color-primary), transparent);border-radius:2px}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1.5rem;margin-bottom:2rem}
-.stat-card{background:var(--color-background-primary);border:1px solid rgba(255,255,255,0.5);border-radius:var(--border-radius-lg);padding:1.5rem;box-shadow:var(--shadow-md);transition:all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);position:relative;overflow:hidden;backdrop-filter:blur(10px)}
+.stat-card{background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);border-radius:var(--border-radius-lg);padding:1.5rem;box-shadow:var(--shadow-md);transition:all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);position:relative;overflow:hidden;backdrop-filter:blur(10px)}
 @media (prefers-color-scheme: dark) {
-  .stat-card{background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary)}
+  .stat-card{background:rgba(37,38,43,0.6);border:1px solid rgba(255,255,255,0.05)}
 }
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg, var(--color-primary-light), var(--color-primary));opacity:0;transition:opacity 0.3s}
 .stat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
@@ -102,9 +103,9 @@ code{font-family:var(--font-mono);font-size:0.85em;background:var(--color-backgr
 .stat-label{font-size:13px;font-weight:700;color:var(--color-text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
 .stat-value{font-size:32px;font-weight:800;line-height:1.2;color:var(--color-text-primary);background:-webkit-linear-gradient(45deg, var(--color-text-primary), var(--color-text-tertiary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .stat-sub{font-size:13px;color:var(--color-text-tertiary);margin-top:8px;font-weight:500}
-.section-card{background:var(--color-background-primary);border:1px solid rgba(255,255,255,0.5);border-radius:var(--border-radius-lg);padding:2rem;margin-bottom:1.5rem;overflow-x:auto;box-shadow:var(--shadow-md);backdrop-filter:blur(10px)}
+.section-card{background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);border-radius:var(--border-radius-lg);padding:2rem;margin-bottom:1.5rem;overflow-x:auto;box-shadow:var(--shadow-md);backdrop-filter:blur(10px)}
 @media (prefers-color-scheme: dark) {
-  .section-card{background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary)}
+  .section-card{background:rgba(37,38,43,0.6);border:1px solid rgba(255,255,255,0.05)}
 }
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
 .section-title{font-size:18px;font-weight:700;color:var(--color-text-primary);letter-spacing:-0.5px}
@@ -115,14 +116,14 @@ code{font-family:var(--font-mono);font-size:0.85em;background:var(--color-backgr
 table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 .section-card table{min-width:620px}
 .wide-table{min-width:980px}
-th{text-align:left;padding:14px 16px;font-weight:700;font-size:12px;color:var(--color-text-secondary);border-bottom:2px solid var(--color-border-secondary);text-transform:uppercase;letter-spacing:1px;background:rgba(0,0,0,0.02)}
+th{text-align:left;padding:14px 16px;font-weight:700;font-size:12px;color:var(--color-text-secondary);border-bottom:2px solid var(--color-border-secondary);text-transform:uppercase;letter-spacing:1px;background:rgba(0,0,0,0.04)}
 @media (prefers-color-scheme: dark) {
-  th{background:rgba(255,255,255,0.02)}
+  th{background:rgba(255,255,255,0.04)}
 }
 td{padding:14px 16px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle;transition:background 0.2s}
 .note-cell{max-width:280px;white-space:normal;line-height:1.6}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--color-background-tertiary)}
+tr:hover td{background:rgba(0,0,0,0.02)}
 .badge{display:inline-flex;align-items:center;padding:5px 12px;border-radius:var(--border-radius-xl);font-size:12px;font-weight:700;line-height:1;letter-spacing:0.5px}
 .badge-available{background:var(--color-background-success);color:var(--color-text-success);border:1px solid rgba(43,138,62,0.2)}
 .badge-reserved{background:var(--color-background-warning);color:var(--color-text-warning);border:1px solid rgba(217,72,15,0.2)}
@@ -148,17 +149,41 @@ tr:hover td{background:var(--color-background-tertiary)}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
 .analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
 .analytics-wide{grid-column:1/-1}
-.bonus-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
-.bonus-wide{grid-column:1/-1}
-.muted-text{color:var(--color-text-tertiary);font-size:12px;line-height:1.5;margin-top:2px}
-.sql-block{font-family:var(--font-mono);font-size:13px;white-space:pre-wrap;line-height:1.6;background:#1e1e1e;border-radius:var(--border-radius-md);padding:12px 16px;color:#d4d4d4;overflow-x:auto}
-.activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-border-tertiary)}
-.activity-item:last-child{border-bottom:none;padding-bottom:0}
-.activity-item:first-child{padding-top:0}
+	.bonus-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
+	.bonus-wide{grid-column:1/-1}
+	.muted-text{color:var(--color-text-tertiary);font-size:12px;line-height:1.5;margin-top:2px}
+	.mode-tabs{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+	.mode-tab{font-family:var(--font-sans);font-size:13px;font-weight:700;border:none;border-radius:var(--border-radius-sm);padding:8px 12px;background:transparent;color:var(--color-text-secondary);cursor:pointer;transition:all 0.2s ease;}
+	.mode-tab:hover:not(.active){color:var(--color-text-primary)}
+	.mode-tab.active{background:var(--color-background-primary);color:var(--color-primary);box-shadow:var(--shadow-sm)}
+	.assistant-control{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem;background:var(--color-background-primary);padding:16px 20px;border-radius:var(--border-radius-lg);box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.8);}
+	@media (prefers-color-scheme: dark) { .assistant-control{background:rgba(37,38,43,0.6);border-color:rgba(255,255,255,0.05);} }
+	.assistant-control label{font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.5px}
+	.assistant-control select{font-family:var(--font-sans);font-size:13px;font-weight:600;padding:8px 32px 8px 12px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;-webkit-appearance:none;color:var(--color-text-primary);cursor:pointer;transition:all 0.2s;box-shadow:var(--shadow-sm);}
+	.assistant-control select:hover{border-color:var(--color-primary);background-color:var(--color-background-primary);}
+	.assistant-control select:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-primary-light);outline:none;}
+	.sql-block{font-family:var(--font-mono);font-size:13px;white-space:pre-wrap;line-height:1.6;background:#1e1e1e;border-radius:var(--border-radius-md);padding:12px 16px;color:#d4d4d4;overflow-x:auto}
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px;margin:0 -12px;border-radius:var(--border-radius-md);border-bottom:1px solid transparent;transition:background 0.2s}
+.activity-item:not(:last-child){border-bottom-color:var(--color-border-tertiary)}
+.activity-item:hover{background:var(--color-background-secondary);border-bottom-color:transparent}
+.activity-dot.dot-green + div .activity-type{background:var(--color-background-success);color:var(--color-text-success)}
+.activity-dot.dot-amber + div .activity-type{background:var(--color-background-warning);color:var(--color-text-warning)}
+.activity-dot.dot-blue + div .activity-type{background:var(--color-background-info);color:var(--color-text-info)}
+.activity-dot.dot-red + div .activity-type{background:var(--color-background-danger);color:var(--color-text-danger)}
+.activity-feed{max-height:560px;overflow-y:auto;padding-right:6px}
+.activity-filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.activity-filter-chip{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:8px 12px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:12px;font-weight:700;letter-spacing:0.4px;cursor:pointer;transition:all 0.2s ease}
+.activity-filter-chip:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.activity-filter-chip.active{background:var(--color-primary-light);color:var(--color-primary)}
+.activity-filter-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:rgba(0,0,0,0.06);font-size:11px;font-weight:700}
+.activity-filter-chip.active .activity-filter-count{background:rgba(247,103,7,0.15)}
 .activity-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:6px;box-shadow:0 0 0 3px var(--color-background-primary)}
-.dot-green{background:var(--color-text-success)}.dot-amber{background:var(--color-text-warning)}.dot-blue{background:var(--color-text-info)}
+.dot-green{background:var(--color-text-success)}.dot-amber{background:var(--color-text-warning)}.dot-blue{background:var(--color-text-info)}.dot-red{background:var(--color-text-danger)}
 .activity-text{font-size:14px;line-height:1.5;color:var(--color-text-primary)}
 .activity-time{font-size:12px;color:var(--color-text-tertiary);margin-top:4px;font-weight:500}
+.activity-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.activity-type{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.4px;background:var(--color-background-secondary);color:var(--color-text-secondary);text-transform:uppercase}
+.activity-empty{padding:24px 0;color:var(--color-text-secondary);font-size:14px}
 .avatar{width:36px;height:36px;border-radius:50%;background:var(--color-primary-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
 
 /* ── Overlay: fixed fullscreen dim layer ── */
@@ -237,6 +262,12 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
   .sidebar{width:100%;height:auto;border-right:none;border-bottom:1px solid var(--color-border-tertiary);padding:1rem}
   .main{padding:1rem}
 }
+
+#page-analytics table th { position: relative; padding-right: 20px; cursor: pointer; user-select: none; }
+#page-analytics table th::after { content: '↕'; position: absolute; right: 4px; opacity: 0.2; font-size: 12px; font-weight: normal; top: 50%; transform: translateY(-50%); }
+#page-analytics table th:hover::after { opacity: 0.6; }
+#page-analytics table th[data-sort-dir="asc"]::after { content: '▲'; opacity: 1; color: var(--color-primary); }
+#page-analytics table th[data-sort-dir="desc"]::after { content: '▼'; opacity: 1; color: var(--color-primary); }
 </style>
 </head>
 <body>
@@ -285,6 +316,10 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 13.5h12" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="7" width="2.5" height="5" rx=".7" stroke="currentColor" stroke-width="1.2"/><rect x="7" y="4" width="2.5" height="8" rx=".7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="2.5" height="10" rx=".7" stroke="currentColor" stroke-width="1.2"/></svg>
     Analytics
   </div>
+  <div class="nav-item" onclick="showPage('assistant',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M4 11H2.5A1.5 1.5 0 0 1 1 9.5v-6A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v6a1.5 1.5 0 0 1-1.5 1.5H10l-3 3v-3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+    Assistant
+  </div>
   <div class="nav-item" onclick="showPage('llm',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 12v2M11 12v2M5.5 6.5h.01M10.5 6.5h.01M6 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
     LLM Bonus
@@ -319,8 +354,12 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
     </div>
     <div class="two-col">
       <div class="section-card">
-        <div class="section-header"><span class="section-title">Recent activity</span></div>
-        <div id="activity-feed">
+        <div class="section-header">
+          <span class="section-title">Recent activity</span>
+          <span class="muted-text" id="activity-summary">Loading activity...</span>
+        </div>
+        <div id="activity-filter-bar" class="activity-filter-bar"></div>
+        <div id="activity-feed" class="activity-feed">
           <div class="activity-item"><div class="activity-dot dot-blue"></div><div><div class="activity-text">Loading activity...</div><div class="activity-time">Backend API</div></div></div>
         </div>
       </div>
@@ -522,6 +561,39 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
     </div>
   </div>
 
+  <!-- Assistant -->
+	  <div id="page-assistant" class="page">
+	    <div class="page-title" style="display:flex; align-items:center; gap:12px;">Smart Assistant</div>
+	    <div class="section-card">
+	      <div class="section-header"><span class="section-title">Natural language query assistant</span></div>
+	      <div class="assistant-control">
+	        <div class="mode-tabs" aria-label="Assistant mode">
+	          <button class="mode-tab active" id="llm-mode-template" type="button" onclick="setLlmMode('template')">Reviewed template</button>
+	          <button class="mode-tab" id="llm-mode-generated" type="button" onclick="setLlmMode('generated')">GLM-generated SQL</button>
+	        </div>
+	        <label id="llm-method-label" style="display:none">Prompt method</label>
+	        <select id="llm-method-select" style="display:none">
+	          <option value="schema_grounded" selected>schema_grounded</option>
+	          <option value="zero_shot">zero_shot</option>
+	          <option value="few_shot">few_shot</option>
+	          <option value="self_check_repair">self_check_repair</option>
+	        </select>
+	      </div>
+	      <div class="toolbar">
+	        <input type="text" id="llm-prompt-input" placeholder="Ask: Which shelter is most occupied?" style="min-width:360px">
+	        <button class="btn-primary" onclick="submitLlmPrompt()">Run query</button>
+	      </div>
+	      <div class="hint-box" id="llm-mode-hint">
+	        The assistant routes the prompt to a reviewed SQL template from <code>src/queries</code>. It does not execute arbitrary generated SQL.
+	      </div>
+	      <div id="llm-query-summary" class="review-summary" style="display:none"></div>
+	      <div id="llm-query-sql" class="sql-block" style="display:none;margin-bottom:1rem"></div>
+      <table><thead id="llm-query-head"></thead><tbody id="llm-query-body">
+        <tr><td style="color:var(--color-text-secondary)">Try a prompt such as "show available pets" or "analyze volunteer workload".</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
   <!-- LLM Bonus -->
   <div id="page-llm" class="page">
     <div class="page-title" style="display:flex; align-items:center; gap:12px;">LLM + Database Bonus</div>
@@ -530,22 +602,6 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
       <div class="stat-card"><div class="stat-label">Integrity checks</div><div class="stat-value" id="llm-check-count">--</div><div class="stat-sub">schema and data audits</div></div>
       <div class="stat-card"><div class="stat-label">Open findings</div><div class="stat-value" style="color:#854F0B" id="llm-finding-count">--</div><div class="stat-sub">records to review</div></div>
       <div class="stat-card"><div class="stat-label">Safe queries</div><div class="stat-value" style="color:#185FA5" id="llm-query-count">--</div><div class="stat-sub">predefined SELECT tools</div></div>
-    </div>
-
-    <div class="section-card">
-      <div class="section-header"><span class="section-title">Natural language query assistant</span></div>
-      <div class="toolbar">
-        <input type="text" id="llm-prompt-input" placeholder="Ask: Which shelter is most occupied?" style="min-width:360px">
-        <button class="btn-primary" onclick="submitLlmPrompt()">Run safe query</button>
-      </div>
-      <div class="hint-box">
-        The assistant routes the prompt to a reviewed SQL template from <code>src/queries</code>. It does not execute arbitrary generated SQL.
-      </div>
-      <div id="llm-query-summary" class="review-summary" style="display:none"></div>
-      <div id="llm-query-sql" class="sql-block" style="display:none;margin-bottom:1rem"></div>
-      <table><thead id="llm-query-head"></thead><tbody id="llm-query-body">
-        <tr><td style="color:var(--color-text-secondary)">Try a prompt such as "show available pets" or "analyze volunteer workload".</td></tr>
-      </tbody></table>
     </div>
 
     <div class="bonus-grid">
@@ -558,8 +614,8 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
 
       <div class="section-card bonus-wide">
         <div class="section-header"><span class="section-title">Integrity and anomaly audit</span></div>
-        <table><thead><tr><th>Check</th><th>Severity</th><th>Status</th><th>Findings</th><th>Refinement</th></tr></thead><tbody id="llm-audit-tbody">
-          <tr><td colspan="5" style="color:var(--color-text-secondary)">Loading integrity checks...</td></tr>
+        <table><thead><tr><th>Check</th><th>Severity</th><th>Enforcement</th><th>Status</th><th>Findings</th><th>Refinement</th></tr></thead><tbody id="llm-audit-tbody">
+          <tr><td colspan="6" style="color:var(--color-text-secondary)">Loading integrity checks...</td></tr>
         </tbody></table>
       </div>
 
@@ -570,15 +626,25 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
         </tbody></table>
       </div>
 
-      <div class="section-card">
-        <div class="section-header"><span class="section-title">Prompt engineering patterns</span></div>
-        <table><thead><tr><th>Pattern</th><th>Prompt</th><th>Matched query</th></tr></thead><tbody id="llm-prompt-tbody">
-          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading prompt patterns...</td></tr>
-        </tbody></table>
-      </div>
+	      <div class="section-card">
+	        <div class="section-header"><span class="section-title">Prompt engineering patterns</span></div>
+	        <table><thead><tr><th>Pattern</th><th>Prompt</th><th>Matched query</th></tr></thead><tbody id="llm-prompt-tbody">
+	          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading prompt patterns...</td></tr>
+	        </tbody></table>
+	      </div>
 
-      <div class="section-card bonus-wide">
-        <div class="section-header"><span class="section-title">LLM-safe query catalog</span></div>
+	      <div class="section-card bonus-wide">
+	        <div class="section-header"><span class="section-title">Prompt-to-SQL investigation</span></div>
+	        <table style="margin-bottom:1rem"><thead><tr><th>Method</th><th>Purpose</th><th>Best for</th></tr></thead><tbody id="llm-method-tbody">
+	          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading prompt methods...</td></tr>
+	        </tbody></table>
+	        <table><thead><tr><th>Method</th><th>Total</th><th>JSON valid</th><th>Safe</th><th>Executable</th></tr></thead><tbody id="llm-eval-tbody">
+	          <tr><td colspan="5" style="color:var(--color-text-secondary)">Run src/llm_prompt_eval.py to populate evaluation results.</td></tr>
+	        </tbody></table>
+	      </div>
+
+	      <div class="section-card bonus-wide">
+	        <div class="section-header"><span class="section-title">LLM-safe query catalog</span></div>
         <table><thead><tr><th>Name</th><th>Category</th><th>Read-only</th><th>Description</th></tr></thead><tbody id="llm-catalog-tbody">
           <tr><td colspan="4" style="color:var(--color-text-secondary)">Loading query catalog...</td></tr>
         </tbody></table>
@@ -628,12 +694,7 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
     </div>
     <div class="form-group">
       <label class="form-label">Housing type</label>
-      <select class="form-control" id="form-housing">
-        <option value="">Select housing type...</option>
-        <option>Apartment</option><option>Condo</option><option>House</option>
-        <option>House with garden</option>
-        <option>House without garden</option><option>Shared housing</option>
-      </select>
+      <select class="form-control" id="form-housing"><option value="">Select housing type...</option></select>
     </div>
     <div class="hint-box">
       Submitting creates a new record in <code>ADOPTION_APPLICATION</code> shown as <code>Pending</code>. The pet's status will be updated to <code>Reserved</code>.
@@ -763,8 +824,13 @@ let careAssignments = [];
 let analytics = null;
 let llmBonus = null;
 let dashboard = null;
+let llmMode = 'template';
 let reviewingIndex = -1;
 let crudContext = null;
+let selectedActivityTypes = null;
+const APP_TIMEZONE = 'Asia/Shanghai';
+const HOUSING_TYPES = ['Apartment','Condo','House','Townhouse','House with garden','House without garden','Shared housing'];
+const ACTIVITY_TYPE_ORDER = ['adoption','application_review','application','applicant','medical','vaccination','care_assignment','follow_up','volunteer','pet_intake'];
 
 const crudConfigs = {
   'shelters': {
@@ -808,7 +874,7 @@ const crudConfigs = {
       {name:'phone', label:'Phone'},
       {name:'email', label:'Email', type:'email'},
       {name:'address', label:'Address', type:'textarea', wide:true},
-      {name:'housingType', label:'Housing type', type:'select', options: () => ['Apartment','Condo','House','Townhouse','House with garden','House without garden','Shared housing'].map(v => ({value:v, label:v}))},
+      {name:'housingType', label:'Housing type', type:'select', options: housingTypeOptions},
       {name:'hasPetExperience', label:'Has pet experience', type:'bool'},
       {name:'createdAt', label:'Created at', type:'date', defaultValue: todayIso}
     ]
@@ -908,10 +974,14 @@ function statusBadge(s) {
     'Excellent':'badge-approved',
     'Good':'badge-active',
     'Satisfactory':'badge-active',
-    'Needs attention':'badge-pending',
-    'Needs Improvement':'badge-pending',
-    'Yes':'badge-approved',
-    'No':'badge-inactive'
+	    'Needs attention':'badge-pending',
+	    'Needs Improvement':'badge-pending',
+	    'Safe':'badge-approved',
+	    'Unsafe':'badge-rejected',
+	    'Configured':'badge-approved',
+	    'Missing':'badge-pending',
+	    'Yes':'badge-approved',
+	    'No':'badge-inactive'
   };
   return `<span class="badge ${m[s]||''}">${escapeHtml(s)}</span>`;
 }
@@ -948,8 +1018,118 @@ function entityCode(prefix, value) {
   return value ? `${prefix}-${String(value).padStart(3, '0')}` : '';
 }
 
+function zonedDateParts(baseDate = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(baseDate);
+  return {
+    year: Number(parts.find(p => p.type === 'year')?.value || 0),
+    month: Number(parts.find(p => p.type === 'month')?.value || 0),
+    day: Number(parts.find(p => p.type === 'day')?.value || 0)
+  };
+}
+
+function formatDateParts(parts) {
+  return `${String(parts.year).padStart(4, '0')}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
+}
+
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return formatDateParts(zonedDateParts());
+}
+
+function housingTypeOptions() {
+  return HOUSING_TYPES.map(v => ({value:v, label:v}));
+}
+
+function activityTypeLabel(type) {
+  const labels = {
+    adoption: 'Adoption',
+    application_review: 'Review',
+    application: 'Application',
+    applicant: 'Applicant',
+    medical: 'Medical',
+    vaccination: 'Vaccination',
+    care_assignment: 'Assignment',
+    follow_up: 'Follow-up',
+    volunteer: 'Volunteer',
+    pet: 'Pet',
+    shelter: 'Shelter',
+    pet_intake: 'Pet intake'
+  };
+  return labels[type] || String(type || 'Activity').replace(/_/g, ' ');
+}
+
+function activityTypeEntries(activities) {
+  const counts = new Map();
+  activities.forEach(activity => {
+    const type = activity.eventType || 'activity';
+    counts.set(type, (counts.get(type) || 0) + 1);
+  });
+  return [...counts.entries()]
+    .map(([type, count]) => ({type, count}))
+    .sort((a, b) => {
+      const leftIndex = ACTIVITY_TYPE_ORDER.indexOf(a.type);
+      const rightIndex = ACTIVITY_TYPE_ORDER.indexOf(b.type);
+      if (leftIndex !== -1 || rightIndex !== -1) {
+        return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex)
+          - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+      }
+      return activityTypeLabel(a.type).localeCompare(activityTypeLabel(b.type));
+    });
+}
+
+function normalizeSelectedActivityTypes(activities) {
+  if (!(selectedActivityTypes instanceof Set)) return;
+  const availableTypes = new Set(activityTypeEntries(activities).map(entry => entry.type));
+  selectedActivityTypes = new Set([...selectedActivityTypes].filter(type => availableTypes.has(type)));
+  if (selectedActivityTypes.size === 0) {
+    selectedActivityTypes = null;
+  }
+}
+
+function filteredActivities(activities) {
+  normalizeSelectedActivityTypes(activities);
+  if (!(selectedActivityTypes instanceof Set)) return activities;
+  return activities.filter(activity => selectedActivityTypes.has(activity.eventType || 'activity'));
+}
+
+function toggleActivityType(type) {
+  const activities = dashboard?.activities || [];
+  const availableTypes = activityTypeEntries(activities).map(entry => entry.type);
+  if (type === '__all__') {
+    selectedActivityTypes = null;
+    renderDashboard();
+    return;
+  }
+  if (!availableTypes.includes(type)) return;
+  if (!(selectedActivityTypes instanceof Set)) {
+    selectedActivityTypes = new Set([type]);
+  } else {
+    const next = new Set(selectedActivityTypes);
+    if (next.has(type)) {
+      next.delete(type);
+    } else {
+      next.add(type);
+    }
+    selectedActivityTypes = next.size ? next : null;
+  }
+  renderDashboard();
+}
+
+function setHousingTypeSelectValue(selectEl, value = '') {
+  if (!selectEl) return;
+  selectEl.innerHTML = '<option value="">Select housing type...</option>' +
+    HOUSING_TYPES.map(type => `<option value="${escapeFormValue(type)}">${escapeHtml(type)}</option>`).join('');
+  selectEl.value = value && HOUSING_TYPES.includes(value) ? value : '';
+}
+
+function isoDateToUtcMs(dateText) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateText || ''));
+  if (!match) return NaN;
+  return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
 function petOptions() {
@@ -971,7 +1151,7 @@ function volunteerById(id) {
 function approvedApplicationsForPet(petId, excludeApplicationId=null) {
   return apps.filter(a =>
     Number(a.petId) === Number(petId)
-    && a.status === 'Approved'
+    && a.rawStatus === 'Approved'
     && Number(a.applicationId) !== Number(excludeApplicationId)
   );
 }
@@ -979,7 +1159,7 @@ function approvedApplicationsForPet(petId, excludeApplicationId=null) {
 function pendingApplicationsForPet(petId, excludeApplicationId=null) {
   return apps.filter(a =>
     Number(a.petId) === Number(petId)
-    && a.status === 'Pending'
+    && a.rawStatus === 'Under Review'
     && Number(a.applicationId) !== Number(excludeApplicationId)
   );
 }
@@ -1003,13 +1183,15 @@ function petStatusOptions(item) {
   return ['Available','Medical hold'].map(v => ({value:v, label:v}));
 }
 
-function duplicateEmail(items, idField, currentId, email) {
-  if (!email) return false;
-  const normalized = email.trim().toLowerCase();
-  return items.some(item =>
-    Number(item[idField]) !== Number(currentId)
-    && (item.email || '').trim().toLowerCase() === normalized
-  );
+function normalizePetStatusValue(value) {
+  const normalized = String(value || '').trim().toLowerCase().replace(/\s+/g, '_');
+  const map = {
+    'available': 'available',
+    'reserved': 'reserved',
+    'adopted': 'adopted',
+    'medical_hold': 'medical_hold'
+  };
+  return map[normalized] || normalized;
 }
 
 function firstDateConflict(entries, limitDate) {
@@ -1024,7 +1206,7 @@ function clientValidateCrudPayload(resource, payload) {
   if (resource === 'shelters' && editingId != null) {
     const activePets = pets.filter(p =>
       Number(p.shelterId) === editingId
-      && ['Available', 'Reserved', 'Medical hold'].includes(p.status)
+      && ['available', 'reserved', 'medical_hold'].includes(p.rawStatus)
     ).length;
     if (payload.capacity != null && Number(payload.capacity) < activePets) {
       return 'Shelter capacity cannot be lower than its active pet count.';
@@ -1032,6 +1214,7 @@ function clientValidateCrudPayload(resource, payload) {
   }
 
   if (resource === 'pets') {
+    const nextStatus = normalizePetStatusValue(payload.status);
     if (payload.birth && payload.intake && payload.birth > payload.intake) {
       return 'Estimated birth date cannot be after intake date.';
     }
@@ -1039,7 +1222,7 @@ function clientValidateCrudPayload(resource, payload) {
       return 'Pet intake date cannot be in the future.';
     }
     if (editingId == null) {
-      if (payload.status === 'Reserved' || payload.status === 'Adopted') {
+      if (nextStatus === 'reserved' || nextStatus === 'adopted') {
         return 'New pets can start only as Available or Medical hold.';
       }
       return null;
@@ -1047,13 +1230,13 @@ function clientValidateCrudPayload(resource, payload) {
 
     const pending = pendingApplicationsForPet(editingId).length > 0;
     const approved = approvedApplicationsForPet(editingId).length > 0;
-    if (pending && payload.status !== 'Reserved') {
+    if (pending && nextStatus !== 'reserved') {
       return 'A pet with a pending application must stay Reserved.';
     }
-    if (!pending && approved && payload.status !== 'Adopted') {
+    if (!pending && approved && nextStatus !== 'adopted') {
       return 'A pet with an approved adoption must stay Adopted.';
     }
-    if (!pending && !approved && (payload.status === 'Reserved' || payload.status === 'Adopted')) {
+    if (!pending && !approved && (nextStatus === 'reserved' || nextStatus === 'adopted')) {
       return 'Reserved and Adopted statuses must come from the adoption workflow, not direct edits.';
     }
     if (payload.intake) {
@@ -1080,10 +1263,6 @@ function clientValidateCrudPayload(resource, payload) {
     return null;
   }
 
-  if (resource === 'applicants' && duplicateEmail(applicants, 'applicantId', editingId, payload.email)) {
-    return 'Applicant email already exists.';
-  }
-
   if (resource === 'medical-records') {
     const pet = petById(payload.petId);
     if (pet && payload.date && pet.intake && payload.date < pet.intake) {
@@ -1102,9 +1281,6 @@ function clientValidateCrudPayload(resource, payload) {
   }
 
   if (resource === 'volunteers') {
-    if (duplicateEmail(volunteers, 'volunteerId', editingId, payload.email)) {
-      return 'Volunteer email already exists.';
-    }
     if (editingId != null && payload.joined) {
       const earlyAssignment = firstDateConflict(
         careAssignments
@@ -1207,10 +1383,13 @@ async function apiRequest(path, options={}) {
   }
   const res = await fetch(apiPath(path), config);
   const text = await res.text();
-  const payload = text ? JSON.parse(text) : {};
-  if (!res.ok) {
-    throw new Error(payload.error || `Request failed with status ${res.status}`);
-  }
+	  const payload = text ? JSON.parse(text) : {};
+	  if (!res.ok) {
+	    const err = new Error(payload.error || `Request failed with status ${res.status}`);
+	    err.payload = payload;
+	    err.status = res.status;
+	    throw err;
+	  }
   return payload;
 }
 
@@ -1248,7 +1427,12 @@ function renderCrudField(field, item) {
     const selectedFalse = selectedTrue ? '' : ' selected';
     return `<div class="${groupClass}">${label}<select class="form-control" id="crud-${field.name}"><option value="true"${selectedTrue}>Yes</option><option value="false"${selectedFalse}>No</option></select></div>`;
   }
-  const inputType = field.type === 'number' || field.type === 'date' || field.type === 'email' ? field.type : 'text';
+  const isDate = field.type === 'date';
+  if (isDate) {
+    const isFilled = value ? 'date' : 'text';
+    return `<div class="${groupClass}">${label}<input class="form-control" id="crud-${field.name}" type="${isFilled}" placeholder="YYYY-MM-DD" onfocus="this.type='date'" onblur="if(!this.value) this.type='text'" value="${escapeFormValue(value)}"${required}></div>`;
+  }
+  const inputType = field.type === 'number' || field.type === 'email' ? field.type : 'text';
   return `<div class="${groupClass}">${label}<input class="form-control" id="crud-${field.name}" type="${inputType}" value="${escapeFormValue(value)}"${required}></div>`;
 }
 
@@ -1393,15 +1577,30 @@ function renderDashboard() {
     <td>${escapeHtml(row.share)}%</td>
   </tr>`).join('') : '<tr><td colspan="3" style="color:var(--color-text-secondary)">No status data</td></tr>';
 
+  const summary = document.getElementById('activity-summary');
+  const filterBar = document.getElementById('activity-filter-bar');
   const feed = document.getElementById('activity-feed');
   const activities = dashboard?.activities || [];
-  feed.innerHTML = activities.length ? activities.map(a => `<div class="activity-item">
+  const filtered = filteredActivities(activities);
+  const typeEntries = activityTypeEntries(activities);
+  const timezone = dashboard?.timezone || APP_TIMEZONE;
+  summary.textContent = activities.length
+    ? `${filtered.length} of ${activities.length} events shown`
+    : 'No activity yet';
+  filterBar.innerHTML = activities.length ? [
+    `<button class="activity-filter-chip${selectedActivityTypes instanceof Set ? '' : ' active'}" onclick="toggleActivityType('__all__')">All <span class="activity-filter-count">${escapeHtml(activities.length)}</span></button>`,
+    ...typeEntries.map(entry => `<button class="activity-filter-chip${selectedActivityTypes instanceof Set && selectedActivityTypes.has(entry.type) ? ' active' : ''}" onclick="toggleActivityType('${escapeHtml(entry.type)}')">${escapeHtml(activityTypeLabel(entry.type))} <span class="activity-filter-count">${escapeHtml(entry.count)}</span></button>`)
+  ].join('') : '';
+  feed.innerHTML = filtered.length ? filtered.map(a => `<div class="activity-item">
     <div class="activity-dot ${escapeHtml(a.dotClass)}"></div>
     <div>
       <div class="activity-text">${escapeHtml(a.text)}</div>
-      <div class="activity-time">${escapeHtml(a.time)}</div>
+      <div class="activity-meta">
+        <span class="activity-type">${escapeHtml(activityTypeLabel(a.eventType || 'activity'))}</span>
+        <div class="activity-time">${escapeHtml(a.time)} · ${escapeHtml(timezone)}</div>
+      </div>
     </div>
-  </div>`).join('') : '<div class="activity-item"><div class="activity-dot dot-blue"></div><div><div class="activity-text">No recent activity</div><div class="activity-time">Database</div></div></div>';
+  </div>`).join('') : '<div class="activity-empty">No activity matches the current filter.</div>';
 }
 
 function renderShelters() {
@@ -1560,8 +1759,8 @@ function renderApps(data) {
       </td></tr>`; return; }
   tb.innerHTML = data.map(a => {
     const gi = apps.indexOf(a);
-    const approvalLocked = a.status === 'Pending' && approvedApplicationsForPet(a.petId, a.applicationId).length > 0;
-    const actions = a.status === 'Pending'
+    const approvalLocked = a.rawStatus === 'Under Review' && approvedApplicationsForPet(a.petId, a.applicationId).length > 0;
+    const actions = a.rawStatus === 'Under Review'
       ? approvalLocked
         ? `<div style="display:flex;gap:6px;align-items:center"><button class="btn-sm" onclick="openAppDetail(${gi})">View</button><span class="muted-text">Approval locked</span></div>`
         : `<div style="display:flex;gap:6px"><button class="btn-sm" onclick="openAppDetail(${gi})">View</button><button class="btn-approve" onclick="openReview(${gi})">Review</button></div>`
@@ -1665,7 +1864,7 @@ function openNewAppModal() {
   const petSel = document.getElementById('form-pet');
   petSel.innerHTML = '<option value="">Select a pet...</option>';
   pets.filter(p =>
-    p.status === 'Available'
+    p.rawStatus === 'available'
     && !approvedApplicationsForPet(p.petId).length
     && !pendingApplicationsForPet(p.petId).length
   ).forEach(p => {
@@ -1674,18 +1873,16 @@ function openNewAppModal() {
     o.value = p.petId;
     petSel.appendChild(o);
   });
+  setHousingTypeSelectValue(document.getElementById('form-housing'));
   document.getElementById('form-applicant').value = '';
   document.getElementById('form-reason').value = '';
-  document.getElementById('form-housing').value = '';
   document.getElementById('new-app-overlay').classList.add('open');
 }
 
 function syncHousingFromApplicant() {
   const applicantId = Number(document.getElementById('form-applicant').value);
   const applicant = applicants.find(a => a.applicantId === applicantId);
-  if (applicant?.housingType) {
-    document.getElementById('form-housing').value = applicant.housingType;
-  }
+  setHousingTypeSelectValue(document.getElementById('form-housing'), applicant?.housingType || '');
 }
 
 async function submitNewApp() {
@@ -1716,7 +1913,7 @@ function openNewFollowupModal() {
     o.value = record.adoptionId;
     adoptionSel.appendChild(o);
   });
-  document.getElementById('followup-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('followup-date').value = todayIso();
   document.getElementById('followup-type').value = '';
   document.getElementById('followup-condition').value = '';
   document.getElementById('followup-feedback').value = '';
@@ -1792,11 +1989,10 @@ function renderMedical() {
 
 function dueDateStyle(dateText) {
   if (!dateText) return '';
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(`${dateText}T00:00:00`);
-  if (Number.isNaN(due.getTime())) return '';
-  const diffDays = Math.ceil((due - today) / 86400000);
+  const todayMs = isoDateToUtcMs(todayIso());
+  const dueMs = isoDateToUtcMs(dateText);
+  if (Number.isNaN(todayMs) || Number.isNaN(dueMs)) return '';
+  const diffDays = Math.floor((dueMs - todayMs) / 86400000);
   if (diffDays < 0) return ' style="color:#A32D2D"';
   if (diffDays <= 30) return ' style="color:#854F0B"';
   return '';
@@ -2001,10 +2197,11 @@ function renderLlmBonus() {
 
   document.getElementById('llm-audit-tbody').innerHTML = renderTableRows(
     data.integrityAudit,
-    5,
+    6,
     row => `<tr>
       <td><div style="font-weight:500">${escapeHtml(row.title)}</div><div class="muted-text">${escapeHtml(row.llmRationale)}</div></td>
       <td>${escapeHtml(row.severity)}</td>
+      <td><code>${escapeHtml(row.enforcementLayer)}</code></td>
       <td>${statusBadge(row.status)}</td>
       <td>${escapeHtml(row.findingCount)}</td>
       <td>${escapeHtml(row.refinement)}</td>
@@ -2021,17 +2218,40 @@ function renderLlmBonus() {
     </tr>`
   );
 
-  document.getElementById('llm-prompt-tbody').innerHTML = renderTableRows(
-    data.promptPatterns,
-    3,
-    row => `<tr>
-      <td style="font-weight:500">${escapeHtml(row.pattern)}</td>
-      <td>${escapeHtml(row.prompt)}<div class="muted-text">${escapeHtml(row.routingLogic)}</div></td>
-      <td><code>${escapeHtml(row.expectedQuery)}</code></td>
-    </tr>`
-  );
+	  document.getElementById('llm-prompt-tbody').innerHTML = renderTableRows(
+	    data.promptPatterns,
+	    3,
+	    row => `<tr>
+	      <td style="font-weight:500">${escapeHtml(row.pattern)}</td>
+	      <td>${escapeHtml(row.prompt)}<div class="muted-text">${escapeHtml(row.routingLogic)}</div></td>
+	      <td><code>${escapeHtml(row.expectedQuery)}</code></td>
+	    </tr>`
+	  );
 
-  document.getElementById('llm-catalog-tbody').innerHTML = renderTableRows(
+	  document.getElementById('llm-method-tbody').innerHTML = renderTableRows(
+	    data.promptEngineeringMethods,
+	    3,
+	    row => `<tr>
+	      <td><code>${escapeHtml(row.method)}</code></td>
+	      <td>${escapeHtml(row.purpose)}</td>
+	      <td>${escapeHtml(row.bestFor)}</td>
+	    </tr>`
+	  );
+
+	  const evalMethods = data.promptEvaluation?.methods || [];
+	  document.getElementById('llm-eval-tbody').innerHTML = renderTableRows(
+	    evalMethods,
+	    5,
+	    row => `<tr>
+	      <td><code>${escapeHtml(row.method)}</code></td>
+	      <td>${escapeHtml(row.total)}</td>
+	      <td>${escapeHtml(row.jsonValid)}</td>
+	      <td>${escapeHtml(row.safe)}</td>
+	      <td>${escapeHtml(row.executable)}</td>
+	    </tr>`
+	  );
+
+	  document.getElementById('llm-catalog-tbody').innerHTML = renderTableRows(
     data.queryCatalog,
     4,
     row => `<tr>
@@ -2046,6 +2266,17 @@ function renderLlmBonus() {
 }
 
 
+function setLlmMode(mode) {
+  llmMode = mode;
+  document.getElementById('llm-mode-template').classList.toggle('active', mode === 'template');
+  document.getElementById('llm-mode-generated').classList.toggle('active', mode === 'generated');
+  document.getElementById('llm-method-label').style.display = mode === 'generated' ? '' : 'none';
+  document.getElementById('llm-method-select').style.display = mode === 'generated' ? '' : 'none';
+  document.getElementById('llm-mode-hint').innerHTML = mode === 'generated'
+    ? 'The assistant asks GLM to generate one SQLite query, then validates it with static checks, <code>EXPLAIN QUERY PLAN</code>, a read-only connection, and a SQLite authorizer before execution.'
+    : 'The assistant routes the prompt to a reviewed SQL template from <code>src/queries</code>. It does not execute arbitrary generated SQL.';
+}
+
 async function submitLlmPrompt() {
   const input = document.getElementById('llm-prompt-input');
   const prompt = input.value.trim();
@@ -2054,29 +2285,49 @@ async function submitLlmPrompt() {
     return;
   }
   try {
-    const result = await apiRequest('/api/llm-query', {
-      method: 'POST',
-      body: {prompt}
-    });
+    const endpoint = llmMode === 'generated' ? '/api/llm-generate-query' : '/api/llm-query';
+    const body = llmMode === 'generated'
+      ? {prompt, promptMethod: document.getElementById('llm-method-select').value, execute: true}
+      : {prompt};
+    const result = await apiRequest(endpoint, {method: 'POST', body});
     renderLlmQueryResult(result);
-    showToast(`Matched ${result.matchedQuery.name}`, 'success');
+    showToast(llmMode === 'generated' ? 'Generated safe SQL' : `Matched ${result.matchedQuery.name}`, 'success');
   } catch (err) {
+    renderLlmQueryError(err);
     showToast(err.message, 'error');
   }
 }
 
 function renderLlmQueryResult(result) {
+  if (result.matchedQuery) {
+    renderReviewedQueryResult(result);
+    return;
+  }
+  renderGeneratedQueryResult(result);
+}
+
+function renderReviewedQueryResult(result) {
   const summary = document.getElementById('llm-query-summary');
   summary.style.display = 'block';
-  summary.innerHTML = `<strong>${escapeHtml(result.matchedQuery.title)}</strong><br><span class="muted-text">${escapeHtml(result.safetyModel)} Returned ${escapeHtml(result.rowCount)} rows.</span>`;
+  summary.innerHTML = `<strong>${escapeHtml(result.matchedQuery.title)}</strong><br><span class="muted-text">${escapeHtml(result.safetyModel)} Category: ${escapeHtml(result.matchedQuery.category)}. Read-only: ${escapeHtml(result.matchedQuery.readOnly ? 'Yes' : 'No')}. Returned ${escapeHtml(result.rowCount)} rows.</span>`;
+  renderSqlAndRows(result.matchedQuery.sql, result.rows || []);
+}
 
+function renderGeneratedQueryResult(result) {
+  const summary = document.getElementById('llm-query-summary');
+  const safety = result.validation?.safe ? 'Safe' : 'Unsafe';
+  summary.style.display = 'block';
+  summary.innerHTML = `<strong>GLM-generated SQL</strong> ${statusBadge(safety)}<br><span class="muted-text">Model: ${escapeHtml(result.model)}. Method: ${escapeHtml(result.promptMethod)}. Repair attempts: ${escapeHtml(result.repairAttempts)}. Returned ${escapeHtml(result.rowCount)} rows.</span><div class="muted-text">${escapeHtml(result.explanation || '')}</div>`;
+  renderSqlAndRows(result.generatedSql, result.rows || []);
+}
+
+function renderSqlAndRows(sql, rows) {
   const sqlBlock = document.getElementById('llm-query-sql');
   sqlBlock.style.display = 'block';
-  sqlBlock.textContent = result.matchedQuery.sql;
+  sqlBlock.textContent = sql || '';
 
   const head = document.getElementById('llm-query-head');
   const body = document.getElementById('llm-query-body');
-  const rows = result.rows || [];
   if (!rows.length) {
     head.innerHTML = '';
     body.innerHTML = '<tr><td style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No rows returned</td></tr>';
@@ -2085,6 +2336,20 @@ function renderLlmQueryResult(result) {
   const columns = Object.keys(rows[0]);
   head.innerHTML = `<tr>${columns.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr>`;
   body.innerHTML = rows.map(row => `<tr>${columns.map(col => `<td>${escapeHtml(row[col])}</td>`).join('')}</tr>`).join('');
+}
+
+function renderLlmQueryError(err) {
+  const payload = err.payload || {};
+  const summary = document.getElementById('llm-query-summary');
+  summary.style.display = 'block';
+  const validation = payload.validation;
+  const validationText = validation ? ` ${statusBadge(validation.safe ? 'Safe' : 'Unsafe')} <span class="muted-text">${escapeHtml(validation.reason || '')}</span>` : '';
+  summary.innerHTML = `<strong>Assistant error</strong>${validationText}<br><span class="muted-text">${escapeHtml(err.message)}</span>`;
+  const sqlBlock = document.getElementById('llm-query-sql');
+  sqlBlock.style.display = payload.generatedSql ? 'block' : 'none';
+  sqlBlock.textContent = payload.generatedSql || '';
+  document.getElementById('llm-query-head').innerHTML = '';
+  document.getElementById('llm-query-body').innerHTML = '<tr><td style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No executable result</td></tr>';
 }
 
 function initials(name) {
@@ -2114,7 +2379,7 @@ function renderLoadError(message) {
     const tb = document.getElementById(id);
     if (tb) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
   });
-  ['llm-refinement-tbody','llm-audit-tbody','llm-constraint-tbody','llm-prompt-tbody','llm-catalog-tbody'].forEach(id => {
+	  ['llm-refinement-tbody','llm-audit-tbody','llm-constraint-tbody','llm-prompt-tbody','llm-method-tbody','llm-eval-tbody','llm-catalog-tbody'].forEach(id => {
     const tb = document.getElementById(id);
     if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
   });
@@ -2127,6 +2392,45 @@ document.getElementById('llm-prompt-input').addEventListener('keydown', event =>
 loadData().catch(err => {
   renderLoadError(err.message);
   showToast(`Could not load backend data: ${err.message}`, 'error');
+});
+
+// Setup Analytics Table Sorting
+document.querySelectorAll('#page-analytics table th').forEach(th => {
+  th.style.cursor = 'pointer';
+  th.title = 'Click to sort';
+  th.addEventListener('click', () => {
+    const table = th.closest('table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    if (rows.length === 0 || rows[0].querySelector('td[colspan]')) return; // ignore loading/empty
+    
+    const index = Array.from(th.parentNode.children).indexOf(th);
+    const isAscending = th.dataset.sortDir === 'asc';
+    
+    rows.sort((a, b) => {
+      const aText = a.children[index].textContent.trim();
+      const bText = b.children[index].textContent.trim();
+      
+      // Attempt numeric sort if values look like numbers (percentages, currency, IDs)
+      const aNum = parseFloat(aText.replace(/[^0-9.-]+/g, ''));
+      const bNum = parseFloat(bText.replace(/[^0-9.-]+/g, ''));
+      const isNum = !isNaN(aNum) && !isNaN(bNum) && /^[0-9$.%-]/.test(aText) && /^[0-9$.%-]/.test(bText);
+      
+      if (isNum) {
+        return isAscending ? aNum - bNum : bNum - aNum;
+      } else {
+        return isAscending ? aText.localeCompare(bText) : bText.localeCompare(aText);
+      }
+    });
+    
+    table.querySelectorAll('th').forEach(h => {
+      h.dataset.sortDir = '';
+    });
+    
+    th.dataset.sortDir = isAscending ? 'desc' : 'asc';
+    
+    tbody.append(...rows);
+  });
 });
 </script>
 </body>

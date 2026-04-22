@@ -230,6 +230,18 @@ The following functional dependencies are stated **under the assumptions of the 
 
 Under these assumptions, the following dependencies characterize the relations and support the normalization discussion required by the project brief.
 
+## 7.1.1 Implementation Alignment Note (April 23, 2026)
+
+The current repository implementation keeps the ER design, entity set, table set, attributes, and primary/foreign-key relationships unchanged. The delivered SQLite implementation adds only non-structural hardening that is consistent with this design:
+
+- `CHECK` constraints for documented controlled domains such as pet status and application status,
+- same-row temporal `CHECK` constraints such as birth date before intake date,
+- `UNIQUE` on `AdoptionRecord.application_id`, which matches FR-14 and the documented 1:0..1 relationship,
+- runtime validation and audits for cross-table rules that cannot be expressed directly as SQLite `CHECK` constraints,
+- no new uniqueness assumptions for applicant or volunteer email addresses.
+
+SQLite is the official execution target for this repository version. The SQL deliverables in `src/queries/` are therefore written directly in SQLite syntax rather than relying on runtime dialect translation.
+
 ---
 
 ## 7.2 Functional Dependencies by Relation

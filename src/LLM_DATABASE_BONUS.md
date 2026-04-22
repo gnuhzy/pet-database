@@ -1,60 +1,51 @@
 # LLM + Database Bonus
 
-## Goal
+This repository implements the LLM bonus in two controlled layers:
 
-This bonus component uses an LLM-assisted database workflow in two ways:
+1. LLM-assisted review of database architecture and data integrity.
+2. Safe natural-language access to a reviewed read-only SQL registry.
 
-1. Refine the database architecture by reviewing integrity constraints, anomaly checks, and access paths.
-2. Support natural-language information extraction through a safe query-routing layer.
-
-The implementation is exposed in the web app under **LLM Bonus** and through these backend endpoints:
+The implementation is exposed through:
 
 - `GET /api/llm-bonus`
 - `POST /api/llm-query`
-- MCP tools in `src/mcp_server.py`
+- optional MCP tools in `src/mcp_server.py`
 
----
+SQLite is the official execution target.
 
-## Part 1: LLM-Assisted Database Architecture Refinement
+## Part 1: LLM-Assisted Architecture Review
 
-### Original Design
+### Goal
 
-The original schema already contained normalized core entities:
+Use the LLM as a design-review assistant, not as an unrestricted SQL generator. The review focuses on:
 
-- `SHELTER`
-- `PET`
-- `APPLICANT`
-- `ADOPTION_APPLICATION`
-- `ADOPTION_RECORD`
-- `FOLLOW_UP`
-- `MEDICAL_RECORD`
-- `VACCINATION`
-- `VOLUNTEER`
-- `CARE_ASSIGNMENT`
+- integrity constraints
+- workflow consistency
+- anomaly detection
+- access-path selection
+- safe query exposure
 
-The initial design used primary keys and foreign keys to preserve referential integrity. However, several business rules were still implicit:
+### What Changed
 
-- Status fields were stored as plain text.
-- Pet availability and application workflow state could drift apart.
-- Shelter capacity was a business rule but not automatically audited.
-- Index choices were not tied directly to daily and analytical query workloads.
-- Natural-language querying could be unsafe if arbitrary generated SQL were executed.
+The ER structure stayed the same, but the implementation was hardened.
 
-### LLM-Refined Design
+| Area | Original gap | Refined implementation |
+|---|---|---|
+| Status domains | Free-text workflow fields could drift | Schema `CHECK` constraints now enforce the documented domains where appropriate |
+| Adoption uniqueness | One application could create multiple adoption records in raw SQL | `ADOPTION_RECORD.application_id` is now `UNIQUE` |
+| Temporal ordering | Some date relationships were only implicit | Same-row rules are enforced in schema; cross-table rules are audited and validated in application logic |
+| Indexes | Indexes were documented but not guaranteed to exist at runtime | `src/schema/indexing.sql` now runs during initialization |
+| Query safety | Query catalogs could include write statements | Shared registry now loads only reviewed read-only SQL from `*_queries.sql` |
 
-The LLM-assisted review identified the following refinements:
+### Enforcement Layers
 
-| Area | Original design | LLM-assisted refinement | Implementation |
-|------|-----------------|--------------------------|----------------|
-| Status domains | Status columns were plain `VARCHAR` fields | Treat status values as controlled domains | Backend validation plus suggested `CHECK` constraints |
-| Workflow integrity | Application and pet status could be updated independently | Reserve pets when applications are created; release pets after rejection if no pending application remains | Implemented in `POST /api/applications` and `PATCH /api/applications/{id}/review` |
-| Anomaly detection | Foreign keys catch missing parent rows, but not business anomalies | Add repeatable audit checks | Implemented in `GET /api/llm-bonus` |
-| Efficient access | Queries existed, but access paths were not tied to workloads | Index FK, status, and due-date fields | Documented in `src/schema/indexing.sql` |
-| LLM query safety | Free-form SQL generation could hallucinate or mutate data | Route prompts to reviewed query templates | Implemented in MCP tools and `POST /api/llm-query` |
+The bonus page now reports each rule with an `enforcementLayer`:
 
-### Suggested Refined Constraints
+- `schema`: enforced directly by SQLite constraints
+- `application`: enforced by backend validation and transactional workflow logic
+- audit-oriented review logic: surfaced as repeatable checks for drift detection
 
-Representative refinements suggested by the LLM review:
+Representative schema-enforced rules:
 
 ```sql
 CHECK (status IN ('available', 'reserved', 'adopted', 'medical_hold'))
@@ -65,84 +56,206 @@ CHECK (status IN ('Under Review', 'Approved', 'Rejected'))
 ```
 
 ```sql
-CREATE INDEX idx_application_status
-ON ADOPTION_APPLICATION(status);
+UNIQUE (application_id)
 ```
 
-```sql
-CREATE INDEX idx_vaccination_next_due
-ON VACCINATION(next_due_date);
-```
+Representative application-enforced rules:
 
-### Anomaly Detection
+- shelter capacity cannot be exceeded by active pets
+- a reserved pet must have an active under-review application
+- only one application can end as approved for a pet
+- care assignments cannot cross shelter boundaries
+- follow-up records cannot predate the adoption event they depend on
 
-The backend now runs business-level checks, including:
+### Integrity Audit
 
-- invalid `PET.status` values
-- invalid `ADOPTION_APPLICATION.status` values
+`GET /api/llm-bonus` returns a repeatable audit pack containing:
+
+- check id and title
+- severity
+- enforcement layer
+- rationale
+- refinement note
+- executable SQL
+- finding count
+- sample rows
+
+Examples of audited rules:
+
+- invalid `PET.status`
+- invalid `ADOPTION_APPLICATION.status`
+- structured domain drift in care assignments, follow-up records, and medical records
+- invalid applicant housing type
+- malformed email format
 - shelter capacity overflow
-- reserved pets without pending applications
-- pending applications whose pets are not reserved
-- adoption records linked to non-approved applications
-- duplicate pending applications for the same applicant and pet
+- cross-table temporal anomalies
+- reserved pets without under-review applications
+- approved applications without adoption records
+- duplicate active applicant-pet reviews
 
-These are returned by:
+## Part 2: GLM Prompt-to-SQL Investigation
 
-```http
-GET /api/llm-bonus
+### Design Principle
+
+The second 5% LLM bonus requirement asks for prompt methods that guide an LLM to generate accurate database queries. This repository now implements that investigation in two complementary paths:
+
+- `POST /api/llm-query`: a conservative baseline that routes a natural-language question to the reviewed read-only SQL registry.
+- `POST /api/llm-generate-query`: a GLM-backed prompt-to-SQL path that generates one SQLite information-retrieval query, validates it, and only then executes it.
+
+The GLM-generated path is intentionally not an unrestricted SQL console. GLM proposes candidate SQL; the backend owns the safety decision.
+
+### Prompt Methods
+
+`src/llm_sql_assistant.py` implements four prompt methods:
+
+- `zero_shot`: question + output contract + read-only rule.
+- `schema_grounded`: live SQLite schema, keys, indexes, relationships, and domain values.
+- `few_shot`: schema context plus reviewed SQL examples from `src/queries`.
+- `self_check_repair`: schema and examples plus a model self-check; if SQLite rejects the first safe draft, one error-guided repair attempt is allowed.
+
+The schema context is generated from the running SQLite database using `sqlite_master`, `PRAGMA table_info`, `PRAGMA foreign_key_list`, and `PRAGMA index_list`, so the prompt stays aligned with the real schema.
+
+### GLM API Contract
+
+`POST /api/llm-generate-query`
+
+Request:
+
+```json
+{
+  "prompt": "Which shelter has the highest occupancy?",
+  "promptMethod": "schema_grounded",
+  "execute": true
+}
 ```
 
-The frontend displays the check status, finding count, rationale, and recommended refinement.
+Response shape:
 
----
+```json
+{
+  "provider": "zhipu-glm",
+  "model": "glm-5.1",
+  "promptMethod": "schema_grounded",
+  "generatedSql": "SELECT ...",
+  "explanation": "The query counts active pets by shelter and sorts by occupancy.",
+  "assumptions": [],
+  "validation": {
+    "safe": true,
+    "readOnly": true
+  },
+  "rowCount": 3,
+  "rows": [],
+  "repairAttempts": 0
+}
+```
 
-## Part 2: Prompt Engineering for Database Querying
+Environment configuration:
 
-### Risk of Direct SQL Generation
+```bash
+export ZAI_API_KEY="your-rotated-key"
+export GLM_MODEL="glm-5.1"
+export GLM_BASE_URL="https://open.bigmodel.cn/api/paas/v4/"
+```
 
-Allowing an LLM to generate and execute arbitrary SQL is risky because it may:
+`GLM_API_KEY` is accepted as a compatibility fallback. The key is never stored in the repository.
 
-- hallucinate table or column names,
-- generate SQL that does not match the schema,
-- perform unintended updates or deletes,
-- expose SQL injection risks if user text is inserted into SQL directly.
+### Safety Gate
 
-### Refined Prompt-to-Query Method
+Generated SQL must pass all backend checks before execution:
 
-Instead of executing arbitrary LLM-generated SQL, the system uses a safe query registry:
+- comments are stripped before validation
+- exactly one statement is allowed
+- only `SELECT` or read-only `WITH ... SELECT` may run
+- write, DDL, administrative, and attachment commands are blocked
+- SQLite validates the plan through `EXPLAIN QUERY PLAN`
+- execution uses a read-only database URI
+- a SQLite authorizer denies non-read actions
+- a progress handler prevents runaway queries
+- returned rows are capped at 50
 
-1. Staff asks a natural-language question.
-2. The backend extracts intent using keyword and description matching.
-3. The prompt is mapped to a reviewed SQL query from `src/queries`.
-4. The web assistant executes only read-only `SELECT` queries.
-5. The MCP server exposes the same query registry to external LLM clients.
+### Prompt Evaluation Pack
 
-### Example Prompt Patterns
+The prompt investigation is reproducible through:
 
-| Prompt pattern | Example prompt | Matched query |
-|----------------|----------------|---------------|
-| Intent-first | Show pets whose vaccination is due soon | vaccination due-date query |
-| Schema-grounded | Analyze adoption approval rate by applicant housing type | housing approval analytical query |
-| Metric-oriented | Which volunteers completed the most care tasks? | volunteer workload query |
-| Read-only extraction | List available pets for adoption | available pets query |
+- `llm_prompt_cases.json`: 20 prompts covering operational, analytical, filtered, aggregate, ambiguous, and unsafe requests
+- `llm_prompt_eval.py`: manual GLM evaluation runner
+- `llm_prompt_results.json`: generated results consumed by `GET /api/llm-bonus`
 
-### Implemented Interfaces
+Run:
 
-Backend endpoint:
+```bash
+python3 src/llm_prompt_eval.py --methods zero_shot schema_grounded few_shot self_check_repair
+```
 
-```http
-POST /api/llm-query
-Content-Type: application/json
+### Baseline Safe Routing
 
+The existing registry path remains available through `POST /api/llm-query` and the MCP server. It uses the same reviewed read-only SQL catalog as before and is useful as a safety baseline against the generated path.
+
+Request:
+
+```json
 {
   "prompt": "Which shelter is most occupied?"
 }
 ```
 
-MCP tools:
+Response shape:
+
+```json
+{
+  "prompt": "Which shelter is most occupied?",
+  "safetyModel": "Prompt is routed to the shared reviewed read-only query registry; arbitrary SQL generation is disabled.",
+  "matchedQuery": {
+    "name": "analyze_current_occupancy_of_each_shelter",
+    "title": "Analyze current occupancy of each shelter",
+    "description": "Managers monitor how full each shelter is and identify capacity pressure.",
+    "category": "analytical",
+    "readOnly": true,
+    "sql": "SELECT ..."
+  },
+  "rowCount": 3,
+  "rows": [
+    {
+      "shelter_id": 3,
+      "shelter_name": "Animal Rescue Center",
+      "capacity": 40,
+      "current_pet_count": 5,
+      "occupancy_rate": 12.5
+    }
+  ]
+}
+```
+
+### MCP Alignment
+
+The optional MCP server now uses the exact same registry and exposes only:
 
 - `list_available_queries`
 - `execute_named_query`
 - `natural_language_query`
 
-The LLM Bonus frontend page demonstrates this method interactively.
+This means the web path and the MCP path share the same safety boundary:
+
+- same query source
+- same read-only restriction
+- same prompt-routing behavior
+
+## Evidence
+
+- Query registry: [query_registry.py](query_registry.py)
+- GLM prompt-to-SQL core: [llm_sql_assistant.py](llm_sql_assistant.py)
+- Prompt cases: [llm_prompt_cases.json](llm_prompt_cases.json)
+- Prompt evaluation runner: [llm_prompt_eval.py](llm_prompt_eval.py)
+- Web integration: [web_server.py](web_server.py)
+- MCP integration: [mcp_server.py](mcp_server.py)
+- Query SQL: [operational_queries.sql](queries/operational_queries.sql), [analytical_queries.sql](queries/analytical_queries.sql)
+- Workflow examples kept outside the read-only registry: [WORKFLOW_SQL_EXAMPLES.md](WORKFLOW_SQL_EXAMPLES.md)
+- Automated verification: [tests/test_backend.py](../tests/test_backend.py)
+
+## Verification Commands
+
+```powershell
+python src\web_server.py --reset-db
+python -m unittest discover -s tests -v
+python src\llm_prompt_eval.py --methods zero_shot schema_grounded few_shot self_check_repair
+```
