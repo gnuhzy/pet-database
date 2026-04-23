@@ -15,7 +15,7 @@ Verified against the repository state on April 23, 2026. SQLite is the official 
 | Requirement 7 | Analytical SQL queries / data analysis | [src/queries/analytical_queries.sql](src/queries/analytical_queries.sql) | `tests/test_backend.py::QueryRegistryTests.test_official_queries_are_read_only_and_runnable_in_sqlite` |
 | Requirement 8 | Index recommendations and performance-oriented access paths | [src/schema/indexing.sql](src/schema/indexing.sql), [README.md](README.md) | `tests/test_backend.py::InitializationTests.test_initialization_builds_indexes_and_clean_audit` confirms indexes are actually created |
 | Requirement 9 | Working prototype / interface / integrated system | [src/web_server.py](src/web_server.py), [pawtrack_demo.html](pawtrack_demo.html) | `tests/test_backend.py::WorkflowTests`, `tests/test_backend.py::HttpSmokeTests` |
-| Bonus | LLM + Database integration: architecture refinement and prompt-to-SQL generation | [src/LLM_DATABASE_BONUS.md](src/LLM_DATABASE_BONUS.md), [src/query_registry.py](src/query_registry.py), [src/llm_sql_assistant.py](src/llm_sql_assistant.py), [src/llm_prompt_cases.json](src/llm_prompt_cases.json), [pawtrack_demo.html](pawtrack_demo.html) | `tests/test_backend.py::QueryRegistryTests.test_llm_query_returns_read_only_metadata`, `tests/test_backend.py::QueryRegistryTests.test_glm_generated_query_executes_after_validation_with_fake_client`, `tests/test_backend.py::QueryRegistryTests.test_glm_generated_query_rejects_unsafe_sql`, `tests/test_backend.py::HttpSmokeTests.test_glm_generate_query_reports_missing_api_key_without_breaking_template_route` |
+| Bonus | LLM + Database integration: architecture refinement and prompt-to-SQL generation | [src/LLM_DATABASE_BONUS.md](src/LLM_DATABASE_BONUS.md), [src/llm_sql_assistant.py](src/llm_sql_assistant.py), [src/llm_prompt_cases.json](src/llm_prompt_cases.json), [pawtrack_demo.html](pawtrack_demo.html) | `tests/test_backend.py::QueryRegistryTests.test_glm_generated_query_executes_after_validation_with_fake_client`, `tests/test_backend.py::QueryRegistryTests.test_glm_generated_query_rejects_unsafe_sql`, `tests/test_backend.py::HttpSmokeTests.test_glm_generate_query_reports_missing_api_key` |
 
 ## Implementation Notes
 
@@ -25,8 +25,9 @@ Verified against the repository state on April 23, 2026. SQLite is the official 
   - `UNIQUE` on `ADOPTION_RECORD.application_id` to enforce the documented 1:0..1 relationship
 - Indexes from [src/schema/indexing.sql](src/schema/indexing.sql) are now executed during initialization instead of remaining documentation-only.
 - Official SQL deliverables are now SQLite-native and run directly without runtime dialect rewriting.
-- Mutation examples used for workflow explanation were moved to [src/WORKFLOW_SQL_EXAMPLES.md](src/WORKFLOW_SQL_EXAMPLES.md); the reviewed query registry now exposes only read-only `SELECT` statements.
-- The GLM prompt-to-SQL path is separate from the reviewed-template path and validates generated SQL with static checks, `EXPLAIN QUERY PLAN`, a read-only SQLite connection, and a SQLite authorizer before returning rows.
+- Mutation examples used for workflow explanation were moved to [src/WORKFLOW_SQL_EXAMPLES.md](src/WORKFLOW_SQL_EXAMPLES.md); the official query files remain read-only `SELECT` statements.
+- The LLM bonus architecture section uses GLM as a design-review assistant and presents the original-vs-refined database comparison through `GET /api/llm-bonus`.
+- The GLM prompt-to-SQL path validates generated SQL with static checks, `EXPLAIN QUERY PLAN`, a read-only SQLite connection, and a SQLite authorizer before returning rows.
 
 ## Verification Commands
 

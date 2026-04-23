@@ -1,8 +1,8 @@
 # Workflow SQL Examples
 
 These examples document the write-side business workflows used by the web API.
-They are **not** part of the LLM/MCP query registry and are not exposed through
-`/api/llm-query`.
+They are **not** part of the GLM prompt-to-SQL execution path or the named MCP
+read-only query tools.
 
 ## Approve an adoption application
 

@@ -8,6 +8,7 @@ import unittest
 from contextlib import closing
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from typing import Any
 from urllib import error, request
 
 
@@ -281,17 +282,8 @@ class QueryRegistryTests(DatabaseFixtureMixin, unittest.TestCase):
 
         with closing(self.connect()) as conn:
             for query in queries:
-                rows = web_server.execute_read_only_query(conn, query)
+                rows = [dict(row) for row in conn.execute(query.sql).fetchall()]
                 self.assertIsInstance(rows, list, query.name)
-
-    def test_llm_query_returns_read_only_metadata(self) -> None:
-        with closing(self.connect()) as conn:
-            result = web_server.run_llm_query(conn, {"prompt": "Which shelter is most occupied?"})
-
-        self.assertGreater(result["rowCount"], 0)
-        self.assertEqual(result["matchedQuery"]["category"], "analytical")
-        self.assertTrue(result["matchedQuery"]["readOnly"])
-        self.assertTrue(result["matchedQuery"]["sql"].lstrip().upper().startswith("SELECT"))
 
     def test_glm_generated_query_executes_after_validation_with_fake_client(self) -> None:
         fake = FakeGlmClient(
@@ -395,6 +387,172 @@ class QueryRegistryTests(DatabaseFixtureMixin, unittest.TestCase):
         self.assertEqual(result["repairAttempts"], 1)
         self.assertGreater(result["rowCount"], 0)
         self.assertEqual(len(fake.calls), 2)
+
+    def test_adoption_process_prompt_rejects_available_only_sql(self) -> None:
+        fake = FakeGlmClient(
+            json.dumps(
+                {
+                    "sql": "SELECT COUNT(*) AS cat_count FROM PET WHERE species = 'Cat' AND status = 'available'",
+                    "explanation": "Count available cats.",
+                    "tables_used": ["PET"],
+                    "assumptions": [],
+                    "confidence": 0.7,
+                    "prompt_method": "schema_grounded",
+                }
+            )
+        )
+        with closing(self.connect()) as conn:
+            with self.assertRaises(web_server.ApiError) as ctx:
+                web_server.run_llm_generate_query(
+                    conn,
+                    {"prompt": "How many cats are in adoption?", "promptMethod": "schema_grounded"},
+                    client=fake,
+                )
+
+        self.assertEqual(ctx.exception.status, web_server.HTTPStatus.BAD_REQUEST)
+        self.assertIn("adoption process", ctx.exception.message.lower())
+        self.assertFalse(ctx.exception.payload["validation"]["safe"])
+        self.assertIn("suggestedInterpretation", ctx.exception.payload)
+        self.assertIn("suggestedPrompt", ctx.exception.payload)
+        self.assertIn("suggestedSqlTemplate", ctx.exception.payload)
+
+    def test_adoption_process_prompt_accepts_application_workflow_sql(self) -> None:
+        fake = FakeGlmClient(
+            json.dumps(
+                {
+                    "sql": (
+                        "SELECT COUNT(*) AS cat_in_adoption_process "
+                        "FROM ADOPTION_APPLICATION a "
+                        "JOIN PET p ON p.pet_id = a.pet_id "
+                        "WHERE p.species = 'Cat' AND a.status IN ('Under Review', 'Approved')"
+                    ),
+                    "explanation": "Count cats in workflow.",
+                    "tables_used": ["ADOPTION_APPLICATION", "PET"],
+                    "assumptions": [],
+                    "confidence": 0.85,
+                    "prompt_method": "schema_grounded",
+                }
+            )
+        )
+        with closing(self.connect()) as conn:
+            result = web_server.run_llm_generate_query(
+                conn,
+                {"prompt": "How many cats are in adoption?", "promptMethod": "schema_grounded"},
+                client=fake,
+            )
+
+        self.assertTrue(result["validation"]["safe"])
+        self.assertEqual(result["rowCount"], 1)
+        self.assertIn("cat_in_adoption_process", result["rows"][0])
+
+    def test_available_for_adoption_prompt_allows_available_status_sql(self) -> None:
+        fake = FakeGlmClient(
+            json.dumps(
+                {
+                    "sql": "SELECT COUNT(*) AS cat_count FROM PET WHERE species = 'Cat' AND status = 'available'",
+                    "explanation": "Count adoptable cats.",
+                    "tables_used": ["PET"],
+                    "assumptions": [],
+                    "confidence": 0.86,
+                    "prompt_method": "schema_grounded",
+                }
+            )
+        )
+        with closing(self.connect()) as conn:
+            result = web_server.run_llm_generate_query(
+                conn,
+                {"prompt": "How many cats are available for adoption?", "promptMethod": "schema_grounded"},
+                client=fake,
+            )
+
+        self.assertTrue(result["validation"]["safe"])
+        self.assertEqual(result["rowCount"], 1)
+
+    def test_glm_config_reads_rate_limit_controls_from_env(self) -> None:
+        keys = [
+            "ZAI_API_KEY",
+            "GLM_MAX_CONCURRENT_REQUESTS",
+            "GLM_MIN_REQUEST_INTERVAL_SECONDS",
+            "GLM_RATE_LIMIT_RETRIES",
+            "GLM_RATE_LIMIT_BACKOFF_SECONDS",
+        ]
+        old_values = {key: os.environ.get(key) for key in keys}
+        old_env_path = llm_sql_assistant.ENV_PATH
+        llm_sql_assistant.ENV_PATH = Path(self.temp_dir.name) / "missing.env"
+        try:
+            os.environ["ZAI_API_KEY"] = "test-key"
+            os.environ["GLM_MAX_CONCURRENT_REQUESTS"] = "3"
+            os.environ["GLM_MIN_REQUEST_INTERVAL_SECONDS"] = "0.25"
+            os.environ["GLM_RATE_LIMIT_RETRIES"] = "5"
+            os.environ["GLM_RATE_LIMIT_BACKOFF_SECONDS"] = "0.5"
+            config = llm_sql_assistant.LlmConfig.from_env()
+        finally:
+            llm_sql_assistant.ENV_PATH = old_env_path
+            for key, value in old_values.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        self.assertEqual(config.max_concurrent_requests, 3)
+        self.assertEqual(config.min_request_interval_seconds, 0.25)
+        self.assertEqual(config.rate_limit_retries, 5)
+        self.assertEqual(config.rate_limit_backoff_seconds, 0.5)
+
+    def test_glm_client_retries_rate_limited_completion(self) -> None:
+        calls = {"count": 0}
+        client_kwargs: dict[str, Any] = {}
+
+        class FakeRateLimitError(Exception):
+            status_code = 429
+
+        class FakeResponse:
+            choices = [type("Choice", (), {"message": type("Message", (), {"content": "{\"ok\": true}"})()})()]
+
+        class FakeCompletions:
+            def create(self, **kwargs: Any) -> FakeResponse:
+                calls["count"] += 1
+                if calls["count"] == 1:
+                    raise FakeRateLimitError("Error code: 429 - rate limit")
+                return FakeResponse()
+
+        class FakeChat:
+            def __init__(self) -> None:
+                self.completions = FakeCompletions()
+
+        class FakeOpenAI:
+            def __init__(self, **kwargs: Any) -> None:
+                client_kwargs.update(kwargs)
+                self.chat = FakeChat()
+
+        old_openai = sys.modules.get("openai")
+        had_openai = "openai" in sys.modules
+        old_sleep = llm_sql_assistant.time.sleep
+        fake_openai_module = type(sys)("openai")
+        fake_openai_module.OpenAI = FakeOpenAI
+        sys.modules["openai"] = fake_openai_module
+        sleeps: list[float] = []
+        llm_sql_assistant.time.sleep = lambda seconds: sleeps.append(seconds)
+        try:
+            config = llm_sql_assistant.LlmConfig(
+                api_key="test-key",
+                max_concurrent_requests=1,
+                min_request_interval_seconds=0,
+                rate_limit_retries=1,
+                rate_limit_backoff_seconds=0,
+            )
+            raw = llm_sql_assistant.GlmChatClient(config).complete_json([{"role": "user", "content": "test"}])
+        finally:
+            llm_sql_assistant.time.sleep = old_sleep
+            if had_openai:
+                sys.modules["openai"] = old_openai
+            else:
+                sys.modules.pop("openai", None)
+
+        self.assertEqual(raw, "{\"ok\": true}")
+        self.assertEqual(calls["count"], 2)
+        self.assertEqual(client_kwargs["max_retries"], 0)
+        self.assertEqual(sleeps, [0])
 
 
 class WorkflowTests(DatabaseFixtureMixin, unittest.TestCase):
@@ -603,12 +761,28 @@ class HttpSmokeTests(DatabaseFixtureMixin, unittest.TestCase):
             finally:
                 exc.close()
 
+    def request_raw_allow_error(self, method: str, path: str, body: bytes) -> tuple[int, str]:
+        req = request.Request(
+            f"{self.base_url}{path}",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method=method,
+        )
+        try:
+            with request.urlopen(req, timeout=10) as response:
+                return response.status, response.read().decode("utf-8")
+        except error.HTTPError as exc:
+            try:
+                return exc.code, exc.read().decode("utf-8")
+            finally:
+                exc.close()
+
     def test_all_major_get_endpoints_return_expected_shapes(self) -> None:
         expectations = {
             "/api/health": "ok",
             "/api/dashboard": "activities",
             "/api/analytics": "occupancy",
-            "/api/llm-bonus": "queryCatalog",
+            "/api/llm-bonus": "promptEvaluation",
             "/api/shelters": "shelters",
             "/api/pets": "pets",
             "/api/applicants": "applicants",
@@ -629,7 +803,8 @@ class HttpSmokeTests(DatabaseFixtureMixin, unittest.TestCase):
         _, bonus = self.request_json("GET", "/api/llm-bonus")
         self.assertEqual(dashboard["timezone"], web_server.APP_TIMEZONE_NAME)
         self.assertGreater(len(dashboard["activities"]), 12)
-        self.assertTrue(all(entry["readOnly"] for entry in bonus["queryCatalog"]))
+        self.assertEqual(bonus["llmReadiness"]["generatedSqlEndpoint"], "POST /api/llm-generate-query")
+        self.assertNotIn("queryCatalog", bonus)
 
     def test_frontend_and_core_api_paths_smoke(self) -> None:
         applicant_id, pet_id = self.find_open_application_pair()
@@ -644,6 +819,9 @@ class HttpSmokeTests(DatabaseFixtureMixin, unittest.TestCase):
         self.assertIn("activity-type", html)
         self.assertIn("GLM-generated SQL", html)
         self.assertIn("llm-method-select", html)
+        self.assertIn("Pet (available only)", html)
+        self.assertNotIn("LLM Bonus", html)
+        self.assertNotIn("page-llm", html)
 
         status, dashboard = self.request_json("GET", "/api/dashboard")
         self.assertEqual(status, 200)
@@ -682,16 +860,41 @@ class HttpSmokeTests(DatabaseFixtureMixin, unittest.TestCase):
         self.assertIn("occupancy", analytics)
         self.assertIn("followupOutcomes", analytics)
 
-        status, llm_result = self.request_json(
+        status, payload = self.request_json_allow_error(
             "POST",
             "/api/llm-query",
             {"prompt": "Show me pets whose vaccination is due soon"},
         )
-        self.assertEqual(status, 200)
-        self.assertTrue(llm_result["matchedQuery"]["readOnly"])
-        self.assertEqual(llm_result["matchedQuery"]["category"], "operational")
+        self.assertEqual(status, 404)
+        self.assertIn("Endpoint not found", payload["error"])
 
-    def test_glm_generate_query_reports_missing_api_key_without_breaking_template_route(self) -> None:
+    def test_static_serving_blocks_sensitive_files(self) -> None:
+        with self.assertRaises(error.HTTPError) as env_exc:
+            request.urlopen(f"{self.base_url}/.env", timeout=10)
+        self.assertEqual(env_exc.exception.code, 404)
+
+        with self.assertRaises(error.HTTPError) as db_exc:
+            request.urlopen(f"{self.base_url}/pet_database.db", timeout=10)
+        self.assertEqual(db_exc.exception.code, 404)
+
+    def test_invalid_json_returns_bad_request(self) -> None:
+        status, raw_body = self.request_raw_allow_error("POST", "/api/applications", b"{bad json")
+        self.assertEqual(status, 400)
+        payload = json.loads(raw_body)
+        self.assertIn("valid JSON", payload["error"])
+
+    def test_head_requests_supported_for_api_and_frontend(self) -> None:
+        api_req = request.Request(f"{self.base_url}/api/health", method="HEAD")
+        with request.urlopen(api_req, timeout=10) as api_response:
+            self.assertEqual(api_response.status, 200)
+            self.assertEqual(api_response.read(), b"")
+
+        page_req = request.Request(f"{self.base_url}/pawtrack_demo.html", method="HEAD")
+        with request.urlopen(page_req, timeout=10) as page_response:
+            self.assertEqual(page_response.status, 200)
+            self.assertEqual(page_response.read(), b"")
+
+    def test_glm_generate_query_reports_missing_api_key(self) -> None:
         old_zai = os.environ.pop("ZAI_API_KEY", None)
         old_glm = os.environ.pop("GLM_API_KEY", None)
         old_env_path = llm_sql_assistant.ENV_PATH
@@ -711,14 +914,6 @@ class HttpSmokeTests(DatabaseFixtureMixin, unittest.TestCase):
 
         self.assertEqual(status, 503)
         self.assertIn("ZAI_API_KEY", payload["error"])
-
-        status, llm_result = self.request_json(
-            "POST",
-            "/api/llm-query",
-            {"prompt": "Show me available pets"},
-        )
-        self.assertEqual(status, 200)
-        self.assertTrue(llm_result["matchedQuery"]["readOnly"])
 
 
 if __name__ == "__main__":

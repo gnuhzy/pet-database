@@ -2,7 +2,6 @@
   "name": "pet-database",
   "version": "1.0.0",
   "description": "SQLite-backed course project for managing shelters, pets, adoption applications, completed adoptions, follow-ups, medical history, vaccinations, and volunteer care assignments.",
-  "main": "temp.js",
   "directories": {
     "test": "tests"
   },

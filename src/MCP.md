@@ -2,7 +2,7 @@
 
 ## Overview
 
-`src/mcp_server.py` is an optional MCP server that exposes the same reviewed read-only SQL registry used by the web endpoint `POST /api/llm-query`.
+`src/mcp_server.py` is an optional MCP server that exposes the reviewed read-only SQL deliverables as named tools.
 
 It does not execute arbitrary SQL.
 
@@ -51,18 +51,6 @@ Example input:
 ```json
 {
   "query_name": "view_all_pets_that_are_currently_available_for_adoption"
-}
-```
-
-### `natural_language_query`
-
-Routes a natural-language request to the best matching reviewed query and executes it.
-
-Example input:
-
-```json
-{
-  "nl_prompt": "show me pets whose vaccination is due soon"
 }
 ```
 
@@ -129,6 +117,7 @@ The MCP server intentionally does not expose:
 - `UPDATE`
 - `DELETE`
 - arbitrary SQL execution
+- natural-language prompt routing to fixed SQL templates
 - workflow mutations such as approval or follow-up creation
 
 Those write-side examples are documented separately in [WORKFLOW_SQL_EXAMPLES.md](WORKFLOW_SQL_EXAMPLES.md).

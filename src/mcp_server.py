@@ -1,8 +1,9 @@
 """
 Pet Database MCP Server
 
-Exposes reviewed read-only SQL queries from src/queries/*_queries.sql as MCP
-tools. Arbitrary SQL and mutation statements are intentionally out of scope.
+Exposes reviewed read-only SQL queries from src/queries/*_queries.sql as named
+MCP tools. Arbitrary SQL, mutation statements, and prompt-to-template routing
+are intentionally out of scope.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from mcp import stdio_server
 from mcp.server import Server
 from mcp.types import TextContent, Tool
 
-from query_registry import StoredQuery, load_query_registry, match_query_from_prompt
+from query_registry import StoredQuery, load_query_registry
 
 
 DB_PATH = Path(__file__).resolve().parent.parent / "pet_database.db"
@@ -112,20 +113,6 @@ async def list_tools() -> list[Tool]:
                 "required": ["query_name"],
             },
         ),
-        Tool(
-            name="natural_language_query",
-            description="Map a natural-language request to the best reviewed read-only SQL query and execute it.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "nl_prompt": {
-                        "type": "string",
-                        "description": "A natural language question about the pet adoption center database.",
-                    }
-                },
-                "required": ["nl_prompt"],
-            },
-        ),
     ]
 
 
@@ -147,25 +134,6 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             return [TextContent(type="text", text=_format_result(query, rows))]
         except Exception as exc:
             return [TextContent(type="text", text=f"Error executing read-only query '{query_name}': {exc}")]
-
-    if name == "natural_language_query":
-        prompt = arguments.get("nl_prompt", "").strip()
-        if not prompt:
-            return [TextContent(type="text", text="Please provide a natural language prompt.")]
-        query = match_query_from_prompt(prompt, _query_registry)
-        try:
-            rows = execute_query(query.sql)
-            text = "\n".join(
-                [
-                    f"prompt: {prompt}",
-                    "routing_model: reviewed predefined SELECT query only",
-                    "",
-                    _format_result(query, rows),
-                ]
-            )
-            return [TextContent(type="text", text=text)]
-        except Exception as exc:
-            return [TextContent(type="text", text=f"Error executing routed read-only query '{query.name}': {exc}")]
 
     return [TextContent(type="text", text=f"Unknown tool: {name}")]
 

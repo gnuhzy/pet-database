@@ -13,6 +13,7 @@ import json
 import mimetypes
 import re
 import sqlite3
+import traceback
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from http import HTTPStatus
@@ -22,12 +23,6 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import llm_sql_assistant
-from query_registry import (
-    StoredQuery,
-    is_read_only_query,
-    load_query_registry,
-    match_query_from_prompt,
-)
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -36,6 +31,7 @@ SCHEMA_PATH = ROOT_DIR / "src" / "schema" / "table.sql"
 INDEXING_PATH = ROOT_DIR / "src" / "schema" / "indexing.sql"
 DB_PATH = ROOT_DIR / "pet_database.db"
 FRONTEND_PATH = ROOT_DIR / "pawtrack_demo.html"
+PUBLIC_STATIC_ROUTES = {"/": FRONTEND_PATH, "/pawtrack_demo.html": FRONTEND_PATH}
 
 SEED_FILES = [
     ("SHELTER", "Shelter.csv"),
@@ -498,13 +494,6 @@ def row_dict(row: sqlite3.Row | None) -> dict:
 
 def db_date_str(value) -> str:
     return str(value)[:10] if value else ""
-
-
-def execute_read_only_query(conn: sqlite3.Connection, query: StoredQuery) -> list[dict[str, Any]]:
-    if not is_read_only_query(query):
-        raise ApiError(HTTPStatus.BAD_REQUEST, "Only read-only predefined SELECT queries can run from the LLM assistant.")
-    rows = conn.execute(query.sql).fetchall()
-    return [dict(row) for row in rows]
 
 
 def fetch_pets(conn: sqlite3.Connection) -> list[dict]:
@@ -1728,7 +1717,6 @@ def assert_startup_integrity(conn: sqlite3.Connection) -> None:
 
 
 def fetch_llm_bonus(conn: sqlite3.Connection) -> dict:
-    queries = load_query_registry()
     integrity_audit = fetch_integrity_audit(conn)
     issue_count = sum(check["findingCount"] for check in integrity_audit)
     prompt_cases = llm_sql_assistant.read_prompt_cases()
@@ -1736,66 +1724,46 @@ def fetch_llm_bonus(conn: sqlite3.Connection) -> dict:
 
     architecture_refinements = [
         {
-            "area": "Status domains",
-            "originalDesign": "Core workflow and dropdown attributes were modeled as plain text columns.",
-            "llmRefinement": "Harden the repeated operational vocabularies with SQLite CHECK constraints and keep the UI bound to raw values.",
-            "implementation": "table.sql now constrains PET.status, ADOPTION_APPLICATION.status, CARE_ASSIGNMENT domains, FOLLOW_UP.result_status, and other structured enums.",
-            "benefit": "Prevents spelling drift, keeps analytics stable, and makes database-level guarantees explicit.",
+            "area": "Controlled domains",
+            "originalDesign": "Workflow states and dropdown values were stored as plain text, so spelling drift could break filters and analytics.",
+            "llmRefinement": "GLM review flagged repeated vocabularies as domain rules and recommended enforcing them at the SQLite layer.",
+            "implementation": "src/schema/table.sql adds CHECK constraints for PET.status, ADOPTION_APPLICATION.status, PET.species/sex, CARE_ASSIGNMENT domains, MEDICAL_RECORD.record_type, and FOLLOW_UP domains.",
+            "benefit": "Invalid states are rejected before they reach reports, and UI labels stay separated from durable database values.",
         },
         {
-            "area": "Workflow integrity",
-            "originalDesign": "Application and pet status could be updated independently.",
-            "llmRefinement": "Treat PET.status as a workflow derivative that is updated inside the same transaction as application creation and review.",
-            "implementation": "POST /api/applications and PATCH /api/applications/{id}/review keep PET, ADOPTION_APPLICATION, and ADOPTION_RECORD aligned in one transaction.",
-            "benefit": "Removes UI-only assumptions and keeps the adoption workflow internally consistent.",
+            "area": "Cardinality hardening",
+            "originalDesign": "The ER design implied one adoption record per approved application, but raw SQL could still insert duplicates.",
+            "llmRefinement": "GLM suggested promoting this 1:0..1 relationship from documentation into an executable database rule.",
+            "implementation": "ADOPTION_RECORD.application_id is UNIQUE, and the approval workflow checks for an existing approved application before writing.",
+            "benefit": "The refined database prevents duplicate adoption completions while preserving the original ER table structure.",
+        },
+        {
+            "area": "Temporal consistency",
+            "originalDesign": "Date relationships such as review-after-application and due-after-vaccination were mostly implicit.",
+            "llmRefinement": "GLM separated same-row date rules, which SQLite can enforce directly, from cross-table workflow timelines that need application validation and audits.",
+            "implementation": "CHECK constraints enforce same-row ordering; create/update workflows and fetch_integrity_audit cover intake, care assignment, application, adoption, and follow-up timelines.",
+            "benefit": "Impossible timeline records are blocked during normal use and surfaced if direct SQL drift ever occurs.",
+        },
+        {
+            "area": "Workflow-derived state",
+            "originalDesign": "Pet availability, application review state, and adoption records could be changed independently.",
+            "llmRefinement": "GLM review identified PET.status as a derived workflow signal that should move with application creation and review.",
+            "implementation": "POST /api/applications reserves the pet, PATCH /api/applications/{id}/review approves/rejects in one transaction, and approval creates ADOPTION_RECORD consistently.",
+            "benefit": "Staff-facing status, pending applications, and completed adoptions stay aligned without relying on frontend-only assumptions.",
         },
         {
             "area": "Anomaly detection",
-            "originalDesign": "Foreign keys catch missing parent rows but not business anomalies.",
-            "llmRefinement": "Separate data-quality checks by enforcement layer so the report can explain which rules are hardened and which are monitored.",
+            "originalDesign": "Foreign keys caught missing parent rows but not business anomalies such as capacity overflow, orphaned workflow states, or duplicate active reviews.",
+            "llmRefinement": "GLM recommended an audit layer that labels each rule by enforcement boundary: schema, application, or review-oriented monitoring.",
             "implementation": "GET /api/llm-bonus returns executable audit checks with severity, enforcementLayer, finding counts, and sample rows.",
-            "benefit": "Makes the bonus auditable and presentation-ready instead of relying on narrative claims.",
+            "benefit": "The comparison is backed by live database evidence instead of narrative claims.",
         },
         {
-            "area": "Efficient access",
+            "area": "Efficient access paths",
             "originalDesign": "Index recommendations existed as a standalone file but were not applied to the running database.",
-            "llmRefinement": "Promote the documented indexes into the real startup path so performance guidance and runtime state match.",
-            "implementation": "initialize_database now executes src/schema/indexing.sql for rebuilt and existing databases.",
-            "benefit": "Aligns documentation, schema artifacts, and the running SQLite instance.",
-        },
-        {
-            "area": "LLM query safety",
-            "originalDesign": "Natural-language querying and MCP documentation implied safe routing, but mutation examples still lived beside query registry content.",
-            "llmRefinement": "Expose only reviewed SELECT statements through one shared query registry for Web and MCP surfaces.",
-            "implementation": "query_registry.py now loads only *_queries.sql read-only statements, and both /api/llm-query and mcp_server.py use that registry.",
-            "benefit": "Turns the bonus from a documentation claim into a verifiable read-only execution model.",
-        },
-    ]
-
-    prompt_patterns = [
-        {
-            "pattern": "Intent first",
-            "prompt": "Show pets whose vaccination is due soon.",
-            "routingLogic": "Maps keywords such as vaccination due or vaccine soon to the vaccination reminder query.",
-            "expectedQuery": "view_pets_whose_vaccination_due_date_is_approaching",
-        },
-        {
-            "pattern": "Schema-grounded entity wording",
-            "prompt": "Analyze adoption approval rate by applicant housing type.",
-            "routingLogic": "Mentions housing type and approval rate, so it maps to the housing approval analytical query.",
-            "expectedQuery": "analyze_adoption_application_results_by_housing_type",
-        },
-        {
-            "pattern": "Metric-oriented question",
-            "prompt": "Which volunteers completed the most care tasks?",
-            "routingLogic": "Mentions volunteers and completed tasks, so it maps to volunteer workload analysis.",
-            "expectedQuery": "analyze_volunteer_workload_based_on_care_assignments",
-        },
-        {
-            "pattern": "Safety instruction",
-            "prompt": "List available pets for adoption.",
-            "routingLogic": "The assistant chooses a reviewed SELECT query instead of inventing SQL.",
-            "expectedQuery": "view_all_pets_that_are_currently_available_for_adoption",
+            "llmRefinement": "GLM review connected the workload queries to concrete lookup, join, date-filter, and grouping access paths.",
+            "implementation": "initialize_database executes src/schema/indexing.sql for rebuilt and existing databases, and tests verify the index set exists.",
+            "benefit": "Documentation, schema artifacts, and the running SQLite database now match for operational and analytical workloads.",
         },
     ]
 
@@ -1812,7 +1780,7 @@ def fetch_llm_bonus(conn: sqlite3.Connection) -> dict:
         },
         {
             "method": "few_shot",
-            "purpose": "Adds reviewed operational and analytical SQL examples from the official query registry.",
+            "purpose": "Adds compact hand-written SQLite examples that demonstrate joins, aggregates, aliases, and read-only output shape.",
             "bestFor": "Teaching the model the expected SQLite style and result-shaping conventions.",
         },
         {
@@ -1866,7 +1834,6 @@ def fetch_llm_bonus(conn: sqlite3.Connection) -> dict:
             "architectureRefinementCount": len(architecture_refinements),
             "integrityCheckCount": len(integrity_audit),
             "openFindingCount": issue_count,
-            "safeReadOnlyQueryCount": len(queries),
             "promptCaseCount": len(prompt_cases),
             "promptMethodCount": len(prompt_engineering_methods),
             "method": "LLM-assisted design review plus GLM prompt-to-SQL generation guarded by read-only SQL validation.",
@@ -1874,7 +1841,6 @@ def fetch_llm_bonus(conn: sqlite3.Connection) -> dict:
         "architectureRefinements": architecture_refinements,
         "refinedConstraints": refined_constraints,
         "integrityAudit": integrity_audit,
-        "promptPatterns": prompt_patterns,
         "promptEngineeringMethods": prompt_engineering_methods,
         "promptEvaluation": {
             "generatedAt": prompt_results.get("generatedAt"),
@@ -1887,45 +1853,7 @@ def fetch_llm_bonus(conn: sqlite3.Connection) -> dict:
             "defaultModel": llm_sql_assistant.DEFAULT_MODEL,
             "apiKeyConfigured": bool(llm_sql_assistant.LlmConfig.from_env().api_key),
             "generatedSqlEndpoint": "POST /api/llm-generate-query",
-            "reviewedTemplateEndpoint": "POST /api/llm-query",
         },
-        "queryCatalog": [
-            {
-                "name": query.name,
-                "title": query.title,
-                "description": query.description,
-                "category": query.category,
-                "readOnly": True,
-            }
-            for query in queries
-        ],
-    }
-
-
-def run_llm_query(conn: sqlite3.Connection, payload: dict) -> dict:
-    prompt = (payload.get("prompt") or "").strip()
-    if not prompt:
-        raise ApiError(HTTPStatus.BAD_REQUEST, "Prompt is required.")
-
-    queries = load_query_registry()
-    if not queries:
-        raise ApiError(HTTPStatus.INTERNAL_SERVER_ERROR, "No read-only queries are registered.")
-
-    query = match_query_from_prompt(prompt, queries)
-    rows = execute_read_only_query(conn, query)
-    return {
-        "prompt": prompt,
-        "matchedQuery": {
-            "name": query.name,
-            "title": query.title,
-            "description": query.description,
-            "category": query.category,
-            "readOnly": True,
-            "sql": query.sql,
-        },
-        "rowCount": len(rows),
-        "rows": rows[:50],
-        "safetyModel": "The prompt is routed to a reviewed predefined SELECT query from the shared registry. Arbitrary generated SQL is not executed.",
     }
 
 
@@ -2998,7 +2926,22 @@ class PawTrackHandler(BaseHTTPRequestHandler):
         except ApiError as exc:
             self.write_json({"error": exc.message, **exc.payload}, exc.status)
         except Exception as exc:
-            self.write_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.write_internal_error(exc)
+
+    def do_HEAD(self) -> None:
+        parsed = urlparse(self.path)
+        path = parsed.path
+        query = parse_qs(parsed.query)
+
+        try:
+            if path.startswith("/api/"):
+                self.write_json(api_payload(path, query), head_only=True)
+                return
+            self.serve_static(path, head_only=True)
+        except ApiError as exc:
+            self.write_json({"error": exc.message, **exc.payload}, exc.status, head_only=True)
+        except Exception as exc:
+            self.write_internal_error(exc, head_only=True)
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
@@ -3009,11 +2952,6 @@ class PawTrackHandler(BaseHTTPRequestHandler):
                     begin_write(conn)
                     result = create_application(conn, payload)
                 self.write_json({"application": result}, HTTPStatus.CREATED)
-                return
-            if parsed.path == "/api/llm-query":
-                with managed_connection() as conn:
-                    result = run_llm_query(conn, payload)
-                self.write_json(result)
                 return
             if parsed.path == "/api/llm-generate-query":
                 with managed_connection() as conn:
@@ -3039,7 +2977,7 @@ class PawTrackHandler(BaseHTTPRequestHandler):
         except sqlite3.IntegrityError as exc:
             self.write_json({"error": f"Database constraint failed: {exc}"}, HTTPStatus.CONFLICT)
         except Exception as exc:
-            self.write_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.write_internal_error(exc)
 
     def do_PATCH(self) -> None:
         parsed = urlparse(self.path)
@@ -3068,7 +3006,7 @@ class PawTrackHandler(BaseHTTPRequestHandler):
         except ApiError as exc:
             self.write_json({"error": exc.message, **exc.payload}, exc.status)
         except Exception as exc:
-            self.write_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.write_internal_error(exc)
 
     def do_DELETE(self) -> None:
         parsed = urlparse(self.path)
@@ -3094,30 +3032,44 @@ class PawTrackHandler(BaseHTTPRequestHandler):
         except ApiError as exc:
             self.write_json({"error": exc.message, **exc.payload}, exc.status)
         except Exception as exc:
-            self.write_json({"error": str(exc)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            self.write_internal_error(exc)
 
     def read_json_body(self) -> dict:
         length = int(self.headers.get("Content-Length") or 0)
         if length <= 0:
             return {}
         raw = self.rfile.read(length)
-        return json.loads(raw.decode("utf-8"))
+        try:
+            decoded = raw.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "Request body must be valid UTF-8 JSON.") from exc
+        try:
+            data = json.loads(decoded)
+        except json.JSONDecodeError as exc:
+            raise ApiError(HTTPStatus.BAD_REQUEST, "Request body must be valid JSON.") from exc
+        if not isinstance(data, dict):
+            raise ApiError(HTTPStatus.BAD_REQUEST, "JSON request body must be an object.")
+        return data
 
-    def write_json(self, payload: dict, status: HTTPStatus = HTTPStatus.OK) -> None:
+    def write_json(
+        self, payload: dict, status: HTTPStatus = HTTPStatus.OK, *, head_only: bool = False
+    ) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
-        self.wfile.write(data)
+        if not head_only:
+            self.wfile.write(data)
 
-    def serve_static(self, path: str) -> None:
-        if path in {"/", "/pawtrack_demo.html"}:
-            static_path = FRONTEND_PATH
-        else:
-            static_path = (ROOT_DIR / path.lstrip("/")).resolve()
-            if ROOT_DIR not in static_path.parents and static_path != ROOT_DIR:
-                raise ApiError(HTTPStatus.FORBIDDEN, "Forbidden.")
+    def write_internal_error(self, exc: Exception, *, head_only: bool = False) -> None:
+        traceback.print_exception(type(exc), exc, exc.__traceback__)
+        self.write_json({"error": "Internal server error."}, HTTPStatus.INTERNAL_SERVER_ERROR, head_only=head_only)
+
+    def serve_static(self, path: str, *, head_only: bool = False) -> None:
+        static_path = PUBLIC_STATIC_ROUTES.get(path)
+        if static_path is None:
+            raise ApiError(HTTPStatus.NOT_FOUND, "File not found.")
         if not static_path.exists() or not static_path.is_file():
             raise ApiError(HTTPStatus.NOT_FOUND, "File not found.")
 
@@ -3127,7 +3079,8 @@ class PawTrackHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
-        self.wfile.write(data)
+        if not head_only:
+            self.wfile.write(data)
 
 
 def main() -> None:

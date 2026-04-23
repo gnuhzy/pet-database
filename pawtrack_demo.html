@@ -30,15 +30,33 @@
   --color-primary: #f76707;
   --color-primary-hover: #e8590c;
   --color-primary-light: #ffe8cc;
+  --color-accent-blue: #1c7ed6;
+  --color-accent-teal: #0ca678;
+  --color-accent-violet: #7048e8;
+  --color-accent-rose: #d6336c;
+  --color-surface-glass: rgba(255,255,255,0.72);
+  --color-surface-strong: rgba(255,255,255,0.92);
+  --sql-panel-surface: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,248,240,0.94) 100%);
+  --sql-panel-border: rgba(247,103,7,0.14);
+  --sql-panel-header: linear-gradient(180deg, rgba(247,103,7,0.08) 0%, rgba(247,103,7,0.02) 100%);
+  --sql-code-surface: linear-gradient(180deg, rgba(255,250,245,0.96) 0%, rgba(255,255,255,0.98) 100%);
+  --sql-code-border: rgba(247,103,7,0.12);
+  --sql-code-text: #3d2b1f;
+  --sql-token-keyword: #d9480f;
+  --sql-token-function: #5f3dc4;
+  --sql-token-string: #2b8a3e;
+  --sql-token-number: #1864ab;
+  --sql-token-operator: #7c6f64;
+  --sql-token-comment: #868e96;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'SFMono-Regular', Consolas, monospace;
   --border-radius-sm: 6px;
-  --border-radius-md: 12px;
-  --border-radius-lg: 20px;
-  --border-radius-xl: 24px;
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-md: 0 8px 16px rgba(0,0,0,0.06);
-  --shadow-lg: 0 16px 32px rgba(0,0,0,0.08);
+  --border-radius-md: 8px;
+  --border-radius-lg: 8px;
+  --border-radius-xl: 999px;
+  --shadow-sm: 0 2px 8px rgba(33,37,41,0.06);
+  --shadow-md: 0 12px 30px rgba(33,37,41,0.08);
+  --shadow-lg: 0 24px 60px rgba(33,37,41,0.14);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -59,56 +77,167 @@
     --color-border-tertiary: rgba(255,255,255,0.08);
     --color-border-secondary: rgba(255,255,255,0.15);
     --color-border-primary: rgba(255,255,255,0.25);
+    --color-surface-glass: rgba(37,38,43,0.72);
+    --color-surface-strong: rgba(37,38,43,0.92);
+    --sql-panel-surface: linear-gradient(180deg, rgba(37,38,43,0.82) 0%, rgba(26,27,30,0.94) 100%);
+    --sql-panel-border: rgba(247,103,7,0.22);
+    --sql-panel-header: linear-gradient(180deg, rgba(247,103,7,0.14) 0%, rgba(247,103,7,0.04) 100%);
+    --sql-code-surface: linear-gradient(180deg, rgba(31,32,36,0.96) 0%, rgba(24,25,28,0.98) 100%);
+    --sql-code-border: rgba(255,255,255,0.08);
+    --sql-code-text: #f1f3f5;
+    --sql-token-keyword: #ff922b;
+    --sql-token-function: #74c0fc;
+    --sql-token-string: #8ce99a;
+    --sql-token-number: #ffd43b;
+    --sql-token-operator: #adb5bd;
+    --sql-token-comment: #868e96;
   }
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--color-background-tertiary)}
 body{font-family:var(--font-sans);color:var(--color-text-primary);-webkit-font-smoothing:antialiased}
 code{font-family:var(--font-mono);font-size:0.85em;background:var(--color-background-secondary);padding:0.2em 0.4em;border-radius:var(--border-radius-sm);color:var(--color-primary)}
-.app{display:flex;height:100vh;overflow:hidden;background-color:var(--color-background-tertiary);background-image: radial-gradient(at 0% 0%, hsla(28,100%,74%,0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(28,100%,74%,0.1) 0px, transparent 50%), radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 20px 20px;}
-.sidebar{width:250px;flex-shrink:0;background:rgba(255, 255, 255, 0.6);backdrop-filter:blur(24px);border-right:1px solid rgba(255, 255, 255, 0.7);padding:1.5rem 0.75rem;display:flex;flex-direction:column;overflow-y:auto;box-shadow:var(--shadow-md);z-index:10}
+.app{position:relative;display:flex;width:100vw;max-width:100vw;min-width:0;height:100vh;overflow:hidden;background-color:var(--color-background-tertiary);background-image:linear-gradient(135deg, rgba(255,247,237,0.86) 0%, rgba(231,245,255,0.78) 46%, rgba(235,251,238,0.8) 100%), linear-gradient(rgba(33,37,41,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(33,37,41,0.035) 1px, transparent 1px);background-size:100% 100%, 28px 28px, 28px 28px}
+.app::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg width='112' height='112' viewBox='0 0 112 112' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23f76707' stroke-width='2' stroke-linecap='round' opacity='.42'%3E%3Cpath d='M22 34c4-7 15-7 19 0 3 6-2 13-9 13s-13-7-10-13Z'/%3E%3Cpath d='M16 22c1-4 5-6 8-5 3 1 4 5 3 9-1 4-5 7-8 6s-5-6-3-10Z'/%3E%3Cpath d='M33 18c3-2 7 0 9 4s1 8-2 10-7 0-9-4-1-8 2-10Z'/%3E%3Cpath d='M48 28c3 1 4 5 2 9-2 4-6 6-9 4s-4-6-2-10 6-5 9-3Z'/%3E%3C/g%3E%3C/svg%3E");background-size:112px 112px;opacity:0.16;mask-image:linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%)}
+.sidebar{width:250px;flex-shrink:0;background:linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0.68));backdrop-filter:blur(24px);border-right:1px solid rgba(255,255,255,0.82);padding:1.5rem 0.75rem;display:flex;flex-direction:column;overflow-y:auto;box-shadow:var(--shadow-md);z-index:10}
 @media (prefers-color-scheme: dark) {
-  .app{background-color:#1a1b1e; background-image: radial-gradient(at 0% 0%, hsla(28,100%,74%,0.1) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(28,100%,74%,0.05) 0px, transparent 50%), radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px); background-size: 100% 100%, 100% 100%, 20px 20px;}
-  .sidebar{background:rgba(37, 38, 43, 0.6);border-right:1px solid rgba(255, 255, 255, 0.05)}
+  .app{background-color:#141517;background-image:linear-gradient(135deg, rgba(31,32,36,0.94) 0%, rgba(24,38,52,0.78) 52%, rgba(24,47,40,0.68) 100%), linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);background-size:100% 100%, 28px 28px, 28px 28px}
+  .app::before{opacity:0.08}
+  .sidebar{background:linear-gradient(180deg, rgba(37,38,43,0.86), rgba(26,27,30,0.68));border-right:1px solid rgba(255, 255, 255, 0.06)}
 }
 .sidebar-logo{padding:0 0.75rem 1.5rem;margin-bottom:0.5rem;display:flex;flex-direction:column;gap:4px}
-.sidebar-logo p{font-size:12px;color:var(--color-text-tertiary);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;background:-webkit-linear-gradient(0deg, var(--color-primary), #e8590c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sidebar-logo p{font-size:12px;color:var(--color-text-tertiary);font-weight:700;text-transform:uppercase;letter-spacing:0.7px;background:-webkit-linear-gradient(0deg, var(--color-primary), var(--color-accent-teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .sidebar-logo h2{font-size:20px;font-weight:800;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;letter-spacing:-0.5px}
-.sidebar-logo h2::before {content:'';display:block;width:14px;height:14px;background:linear-gradient(135deg, var(--color-primary) 0%, #d9480f 100%);border-radius:50%;box-shadow:0 2px 4px rgba(247,103,7,0.3)}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 14px;font-size:14px;font-weight:500;cursor:pointer;color:var(--color-text-secondary);transition:all 0.2s ease;user-select:none;border-radius:var(--border-radius-lg);margin-bottom:6px;padding:12px 16px;border:1px solid transparent}
-.nav-item:hover{background:rgba(248, 249, 250, 0.8);color:var(--color-text-primary);transform:translateX(2px)}
+.sidebar-logo h2::before{content:'';display:block;width:22px;height:22px;border-radius:7px;background:radial-gradient(circle at 33% 33%, rgba(255,255,255,0.9) 0 2px, transparent 2.4px),radial-gradient(circle at 60% 31%, rgba(255,255,255,0.9) 0 2px, transparent 2.4px),radial-gradient(circle at 71% 55%, rgba(255,255,255,0.9) 0 2px, transparent 2.4px),radial-gradient(ellipse at 50% 66%, rgba(255,255,255,0.9) 0 4px, transparent 4.5px),linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent-teal) 100%);box-shadow:0 10px 20px rgba(12,166,120,0.2)}
+.nav-item{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;cursor:pointer;color:var(--color-text-secondary);transition:transform 0.2s ease,background 0.2s ease,box-shadow 0.2s ease,color 0.2s ease;user-select:none;border-radius:var(--border-radius-lg);margin-bottom:6px;padding:12px 16px;border:1px solid transparent;position:relative;overflow:hidden}
+.nav-item::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg, rgba(247,103,7,0.14), rgba(12,166,120,0.12));opacity:0;transition:opacity 0.2s ease;z-index:-1}
+.nav-item:hover{background:rgba(255,255,255,0.72);color:var(--color-text-primary);transform:translateX(4px);box-shadow:0 12px 24px rgba(33,37,41,0.08)}
+.nav-item:hover::after{opacity:1}
 @media (prefers-color-scheme: dark) {
-  .nav-item:hover{background:rgba(37, 38, 43, 0.8)}
+  .nav-item:hover{background:rgba(37, 38, 43, 0.84)}
 }
-.nav-item.active{background:var(--color-primary-light);color:var(--color-primary);font-weight:600;box-shadow:inset 0 0 0 1px rgba(247,103,7,0.1)}
+.nav-item.active{background:linear-gradient(90deg, rgba(247,103,7,0.16), rgba(12,166,120,0.12));color:var(--color-primary);font-weight:800;box-shadow:inset 0 0 0 1px rgba(247,103,7,0.14)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:4px;background:linear-gradient(180deg, var(--color-primary), var(--color-accent-teal));border-radius:0 999px 999px 0}
 @media (prefers-color-scheme: dark) {
   .nav-item.active{background:rgba(247,103,7,0.15);box-shadow:inset 0 0 0 1px rgba(247,103,7,0.25)}
 }
 .nav-icon{width:18px;height:18px;flex-shrink:0;opacity:0.8;transition:transform 0.2s}
 .nav-item:hover .nav-icon{transform:scale(1.1)}
 .nav-item.active .nav-icon{opacity:1;transform:scale(1.1)}
-.main{flex:1;overflow-y:auto;padding:2.5rem 3rem;background:transparent}
-.page{display:none;animation:fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)}.page.active{display:block}
+.main{flex:1;min-width:0;overflow-y:auto;padding:2.5rem 3rem;background:transparent}
+.page{display:none;opacity:0;transform:translateY(12px);transition:opacity 0.28s ease, transform 0.28s ease;will-change:opacity, transform;position:relative;z-index:1}
+.page.active{display:block;opacity:1;transform:translateY(0)}
+.page.page-entering .section-card,.page.page-entering .stat-card{animation:sectionFade 0.42s ease both}
 @keyframes fadeIn {from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .page-title{font-size:28px;font-weight:800;margin-bottom:2rem;color:var(--color-text-primary);letter-spacing:-0.5px;position:relative;display:inline-block}
-.page-title::after{content:'';position:absolute;bottom:-8px;left:0;width:40px;height:4px;background:linear-gradient(90deg, var(--color-primary), transparent);border-radius:2px}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1.5rem;margin-bottom:2rem}
-.stat-card{background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);border-radius:var(--border-radius-lg);padding:1.5rem;box-shadow:var(--shadow-md);transition:all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);position:relative;overflow:hidden;backdrop-filter:blur(10px)}
+.page-title::before{content:'';position:absolute;left:-28px;top:8px;width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg, var(--color-primary), var(--color-accent-teal));box-shadow:0 8px 18px rgba(12,166,120,0.24)}
+.page-title::after{content:'';position:absolute;bottom:-8px;left:0;width:56px;height:4px;background:linear-gradient(90deg, var(--color-primary), var(--color-accent-teal), transparent);border-radius:2px}
+.hero-banner{position:relative;max-width:100%;background:radial-gradient(circle at 18% 18%, rgba(255,255,255,0.22) 0%, transparent 24%), radial-gradient(circle at 82% 16%, rgba(255,212,59,0.18) 0%, transparent 22%), linear-gradient(135deg, #1455a0 0%, #0b7285 46%, #f76707 100%);border-radius:24px;padding:2.5rem;margin-bottom:2rem;color:#fff;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(300px,0.92fr);align-items:stretch;gap:1.75rem;box-shadow:0 32px 80px rgba(24,100,171,0.24);overflow:hidden;min-height:0;border:1px solid rgba(255,255,255,0.24)}
+.hero-banner::before{content:'';position:absolute;inset:0;background-image:linear-gradient(115deg, rgba(255,255,255,0.16) 0 1px, transparent 1px), linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 48%, transparent 100%);background-size:54px 54px, 100% 100%;opacity:0.34}
+.hero-banner::after{content:'';position:absolute;inset:auto -10% -26% auto;width:360px;height:260px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 68%);opacity:0.78;filter:blur(6px)}
+.hero-copy{position:relative;z-index:2;width:100%;max-width:none;min-width:0;display:grid;align-content:start}
+.hero-title{font-size:clamp(32px, 4vw, 54px);line-height:1.02;font-weight:900;letter-spacing:0;margin-bottom:0.85rem;max-width:680px;overflow-wrap:anywhere}
+.hero-description{width:100%;margin:0;font-size:15px;line-height:1.7;max-width:640px;color:rgba(255,255,255,0.9);overflow-wrap:anywhere}
+.hero-command-panel{position:relative;display:grid;grid-template-columns:1fr;gap:1.2rem;margin-top:1.3rem;padding:22px 22px 18px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));border:1px solid rgba(255,255,255,0.24);box-shadow:0 20px 44px rgba(6,35,66,0.18), inset 0 1px 0 rgba(255,255,255,0.16);backdrop-filter:blur(18px);overflow:hidden}
+.hero-command-panel::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg, rgba(255,255,255,0.08), transparent 42%, rgba(255,255,255,0.05) 100%);pointer-events:none}
+.hero-command-copy{position:relative;z-index:1;min-width:0;display:block}
+.hero-command-summary{display:grid;align-content:start;gap:12px;min-width:0;max-width:700px}
+.hero-command-value{display:block;margin-top:0;font-size:clamp(36px, 5vw, 60px);line-height:1.01;font-weight:900;letter-spacing:-0.04em;max-width:700px;text-wrap:balance}
+.hero-command-meta{margin-top:0;max-width:560px;font-size:14px;line-height:1.65;color:rgba(255,255,255,0.84)}
+.hero-signal-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:12px;align-items:stretch}
+.hero-signal-card{position:relative;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:12px;min-height:164px;padding:16px 16px 15px;border-radius:18px;background:linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08));border:1px solid rgba(255,255,255,0.2);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14);overflow:hidden}
+.hero-signal-card::after{content:'';position:absolute;right:-26px;bottom:-28px;width:92px;height:92px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0) 72%);opacity:0.7}
+.hero-signal-card[data-tone="green"]{background:linear-gradient(180deg, rgba(140,233,154,0.18), rgba(255,255,255,0.08))}
+.hero-signal-card[data-tone="amber"]{background:linear-gradient(180deg, rgba(255,212,59,0.18), rgba(255,255,255,0.08))}
+.hero-signal-card[data-tone="blue"]{background:linear-gradient(180deg, rgba(116,192,252,0.18), rgba(255,255,255,0.08))}
+.hero-signal-head{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.hero-signal-main{position:relative;z-index:1;display:grid;align-content:end;gap:10px;min-height:0}
+.hero-signal-label{position:relative;z-index:1;display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.72px;color:rgba(255,255,255,0.76)}
+.hero-signal-value{position:relative;z-index:1;display:block;margin-top:0;font-size:28px;line-height:1.05;font-weight:900}
+.hero-signal-note{position:relative;z-index:1;display:flex;align-items:flex-end;min-height:2.8em;margin-top:0;font-size:12px;line-height:1.4;color:rgba(255,255,255,0.8)}
+.dashboard-nav-card{cursor:pointer;user-select:none;outline:none}
+.dashboard-nav-card:focus-visible{box-shadow:0 0 0 3px rgba(255,255,255,0.3),0 0 0 6px rgba(12,166,120,0.18),var(--shadow-lg)}
+.dashboard-card-arrow{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.1);color:#fff;flex-shrink:0;transition:transform 0.22s ease, background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease}
+.dashboard-card-arrow svg{width:14px;height:14px;stroke:currentColor}
+.dashboard-card-caption{position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:800;letter-spacing:0.7px;text-transform:uppercase;color:rgba(255,255,255,0.72);transition:color 0.22s ease}
+.dashboard-nav-card:hover .dashboard-card-arrow,.dashboard-nav-card:focus-visible .dashboard-card-arrow{transform:translateX(3px);background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.26);box-shadow:0 10px 18px rgba(6,35,66,0.18)}
+.dashboard-nav-card:hover .dashboard-card-caption,.dashboard-nav-card:focus-visible .dashboard-card-caption{color:#fff}
+.dashboard-target-glow{animation:dashboardTargetGlow 1.05s ease}
+@keyframes dashboardTargetGlow{0%{box-shadow:0 0 0 0 rgba(247,103,7,0),var(--shadow-md)}32%{box-shadow:0 0 0 8px rgba(247,103,7,0.12),0 24px 58px rgba(33,37,41,0.16)}100%{box-shadow:var(--shadow-md)}}
+.hero-stage{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;min-height:100%;min-width:0;padding:0.5rem 0}
+.hero-stage::before{content:'';position:absolute;inset:auto 10% 8% auto;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0) 68%);filter:blur(8px)}
+.hero-stage::after{content:'';position:absolute;left:8%;top:11%;width:168px;height:168px;border-radius:38px;background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.14);backdrop-filter:blur(10px);transform:rotate(-14deg);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08)}
+.shelter-scene{position:relative;z-index:2;width:min(100%, 520px);height:auto;filter:drop-shadow(0 26px 42px rgba(0,0,0,0.18))}
+.shelter-scene .svg-float{animation:sceneFloat 5.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.shelter-scene .svg-float-delayed{animation-delay:0.75s}
+.shelter-scene .tail-wag{animation:tailWag 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:12% 68%}
+.shelter-scene .cat-tail{animation:tailCurl 2.2s ease-in-out infinite;transform-box:fill-box;transform-origin:80% 70%}
+.shelter-scene .heart-pop{animation:heartPop 2.7s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.shelter-scene .paw-step{opacity:0;animation:pawStep 4.2s linear infinite;transform-box:fill-box;transform-origin:center}
+.shelter-scene .paw-step:nth-of-type(2){animation-delay:0.6s}
+.shelter-scene .paw-step:nth-of-type(3){animation-delay:1.2s}
+.shelter-scene .paw-step:nth-of-type(4){animation-delay:1.8s}
+.hero-footer{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:0;width:100%;position:relative;z-index:2}
+.hero-feature{display:flex;align-items:flex-start;gap:12px;background:linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.1));padding:18px;border-radius:18px;backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);transition:transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,0.12)}
+.hero-feature:hover{transform:translateY(-4px);background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.34);box-shadow:0 16px 32px rgba(6,35,66,0.14)}
+.hero-feature-icon{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hero-feature-icon svg{width:20px;height:20px;stroke:currentColor}
+.hero-feature > div{min-width:0}
+.hero-feature strong{display:block;font-size:14px;margin-bottom:4px}
+.hero-footer p{margin:0;color:rgba(255,255,255,0.88);font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.pet-avatar{position:relative;min-width:120px;width:120px;height:120px;background:rgba(255,255,255,0.96);border-radius:38% 38% 45% 45%;box-shadow:0 24px 46px rgba(0,0,0,0.14);display:flex;align-items:center;justify-content:center;overflow:hidden;animation:petAvatarBounce 4.5s ease-in-out infinite;z-index:2}
+.pet-avatar::before,.pet-avatar::after{content:'';position:absolute;top:-16px;width:42px;height:54px;border-radius:50% 50% 40% 40%;background:rgba(255,255,255,0.95);box-shadow:0 0 0 8px rgba(255,255,255,0.18)}
+.pet-avatar::before{left:12px;transform:rotate(-16deg)}
+.pet-avatar::after{right:12px;transform:rotate(16deg)}
+.pet-avatar .face{position:relative;width:76px;height:76px;background:#ffd8a8;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -6px 0 rgba(0,0,0,0.05)}
+.pet-avatar .face::before{content:'';position:absolute;bottom:14px;width:34px;height:18px;border-radius:0 0 24px 24px;background:#f0b26a;box-shadow:inset 0 -2px 0 rgba(0,0,0,0.04)}
+.pet-avatar .eye{position:absolute;top:26px;width:12px;height:12px;border-radius:50%;background:#4c3a1d}
+.pet-avatar .eye.left{left:20px}
+.pet-avatar .eye.right{right:20px}
+.pet-avatar .nose{position:absolute;top:40px;width:14px;height:12px;border-radius:50%;background:#4c3a1d}
+.pet-avatar .cheek{position:absolute;bottom:24px;width:16px;height:8px;border-radius:999px;background:rgba(255,255,255,0.85)}
+.pet-avatar .cheek.left{left:18px}
+.pet-avatar .cheek.right{right:18px}
+@keyframes petAvatarBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes floatSlow{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-18px) scale(1.08)}}
+@keyframes sceneFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes tailWag{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(13deg)}}
+@keyframes tailCurl{0%,100%{transform:rotate(0)}50%{transform:rotate(-10deg)}}
+@keyframes heartPop{0%,100%{opacity:0.65;transform:translateY(0) scale(0.9)}50%{opacity:1;transform:translateY(-10px) scale(1.08)}}
+@keyframes pawStep{0%{opacity:0;transform:translateY(10px) scale(0.82)}18%,62%{opacity:0.8}100%{opacity:0;transform:translateY(-16px) scale(1)}}
+@keyframes sectionFade{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1.25rem;margin-bottom:2rem}
+.stat-card{background:linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0.66));border:1px solid rgba(255,255,255,0.88);border-radius:var(--border-radius-lg);padding:1.35rem;box-shadow:var(--shadow-md);transition:transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;position:relative;overflow:hidden;backdrop-filter:blur(16px);display:flex;flex-direction:column;min-height:198px}
 @media (prefers-color-scheme: dark) {
-  .stat-card{background:rgba(37,38,43,0.6);border:1px solid rgba(255,255,255,0.05)}
+  .stat-card{background:linear-gradient(180deg, rgba(37,38,43,0.82), rgba(26,27,30,0.68));border:1px solid rgba(255,255,255,0.07)}
 }
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg, var(--color-primary-light), var(--color-primary));opacity:0;transition:opacity 0.3s}
-.stat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
-.stat-card:hover::before{opacity:1}
-.stat-label{font-size:13px;font-weight:700;color:var(--color-text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
-.stat-value{font-size:32px;font-weight:800;line-height:1.2;color:var(--color-text-primary);background:-webkit-linear-gradient(45deg, var(--color-text-primary), var(--color-text-tertiary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg, var(--stat-tone, var(--color-primary)), rgba(255,255,255,0.1));opacity:0.95}
+.stat-card::after{content:'';position:absolute;right:-26px;bottom:-28px;width:132px;height:88px;background:repeating-linear-gradient(135deg, color-mix(in srgb, var(--stat-tone, var(--color-primary)) 30%, transparent), color-mix(in srgb, var(--stat-tone, var(--color-primary)) 30%, transparent) 2px, transparent 2px, transparent 10px);opacity:0.22;transform:rotate(-8deg);transition:transform 0.28s ease, opacity 0.28s ease}
+.stat-card[data-tone="orange"]{--stat-tone:var(--color-primary)}
+.stat-card[data-tone="green"]{--stat-tone:var(--color-accent-teal)}
+.stat-card[data-tone="amber"]{--stat-tone:#f08c00}
+.stat-card[data-tone="blue"]{--stat-tone:var(--color-accent-blue)}
+.stat-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg);border-color:color-mix(in srgb, var(--stat-tone, var(--color-primary)) 28%, rgba(255,255,255,0.88))}
+.stat-card:hover::after{opacity:0.34;transform:rotate(-3deg) translateY(-4px)}
+.stat-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.stat-label{font-size:12px;font-weight:800;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.7px}
+.stat-icon{width:38px;height:38px;border-radius:8px;background:color-mix(in srgb, var(--stat-tone, var(--color-primary)) 14%, transparent);color:var(--stat-tone, var(--color-primary));display:flex;align-items:center;justify-content:center;border:1px solid color-mix(in srgb, var(--stat-tone, var(--color-primary)) 18%, transparent)}
+.stat-icon svg{width:19px;height:19px}
+.stat-value{position:relative;z-index:1;font-size:36px;font-weight:900;line-height:1.05;color:var(--stat-tone, var(--color-text-primary));letter-spacing:0}
 .stat-sub{font-size:13px;color:var(--color-text-tertiary);margin-top:8px;font-weight:500}
-.section-card{background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);border-radius:var(--border-radius-lg);padding:2rem;margin-bottom:1.5rem;overflow-x:auto;box-shadow:var(--shadow-md);backdrop-filter:blur(10px)}
+.stat-link-row{position:relative;z-index:1;margin-top:auto;padding-top:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stat-link-text{font-size:10px;font-weight:800;letter-spacing:0.72px;text-transform:uppercase;color:color-mix(in srgb, var(--stat-tone, var(--color-primary)) 82%, var(--color-text-secondary));transition:color 0.22s ease}
+.stat-card .dashboard-card-arrow{color:var(--stat-tone, var(--color-primary));background:color-mix(in srgb, var(--stat-tone, var(--color-primary)) 14%, transparent);border-color:color-mix(in srgb, var(--stat-tone, var(--color-primary)) 20%, transparent)}
+.dashboard-nav-card:hover .stat-link-text,.dashboard-nav-card:focus-visible .stat-link-text{color:var(--stat-tone, var(--color-primary))}
+.section-card{background:linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0.66));border:1px solid rgba(255,255,255,0.88);border-radius:var(--border-radius-lg);padding:1.7rem;margin-bottom:1.5rem;overflow-x:auto;box-shadow:var(--shadow-md);backdrop-filter:blur(16px);opacity:0;transform:translateY(10px);animation:sectionFade 0.45s ease forwards;animation-delay:0.15s}
 @media (prefers-color-scheme: dark) {
-  .section-card{background:rgba(37,38,43,0.6);border:1px solid rgba(255,255,255,0.05)}
+  .section-card{background:linear-gradient(180deg, rgba(37,38,43,0.82), rgba(26,27,30,0.68));border:1px solid rgba(255,255,255,0.07)}
 }
+.section-card:hover{box-shadow:0 18px 44px rgba(33,37,41,0.1);transform:translateY(-1px)}
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap}
-.section-title{font-size:18px;font-weight:700;color:var(--color-text-primary);letter-spacing:-0.5px}
+.section-title{font-size:18px;font-weight:700;color:var(--color-text-primary);letter-spacing:-0.5px;position:relative}
+.section-title::before{content:'';display:inline-block;width:9px;height:9px;margin-right:10px;border-radius:3px;background:linear-gradient(135deg, var(--color-primary), var(--color-accent-teal));box-shadow:0 0 0 5px rgba(247,103,7,0.08);position:relative;top:-1px}
 .toolbar{display:flex;gap:12px;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap}
 .toolbar input,.toolbar select{font-family:var(--font-sans);font-size:14px;padding:10px 14px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);transition:all 0.2s;outline:none;box-shadow:var(--shadow-sm)}
 .toolbar input:focus,.toolbar select:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-primary-light), var(--shadow-sm);transform:translateY(-1px)}
@@ -123,7 +252,45 @@ th{text-align:left;padding:14px 16px;font-weight:700;font-size:12px;color:var(--
 td{padding:14px 16px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle;transition:background 0.2s}
 .note-cell{max-width:280px;white-space:normal;line-height:1.6}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(0,0,0,0.02)}
+tr:hover td{background:rgba(247,103,7,0.08)}
+.section-card table tbody tr{cursor:pointer;transition:background 0.2s ease}
+.section-card table tbody tr.selected td{background:rgba(247,103,7,0.14);box-shadow:inset 0 0 0 1px rgba(247,103,7,0.18)}
+.pet-name-cell{display:flex;align-items:center;gap:10px;font-weight:700;min-width:150px}
+.pet-mini-avatar{width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:900;letter-spacing:0;background:linear-gradient(135deg, #ffe8cc, #fff4e6);color:#d9480f;border:1px solid rgba(247,103,7,0.18);box-shadow:0 8px 18px rgba(247,103,7,0.12)}
+.pet-mini-avatar.species-cat{background:linear-gradient(135deg, #e7f5ff, #d0ebff);color:#1864ab;border-color:rgba(28,126,214,0.18)}
+.pet-mini-avatar.species-rabbit{background:linear-gradient(135deg, #f3f0ff, #e5dbff);color:#6741d9;border-color:rgba(103,65,217,0.18)}
+.pet-mini-avatar.species-bird{background:linear-gradient(135deg, #e3fafc, #c5f6fa);color:#0b7285;border-color:rgba(11,114,133,0.18)}
+.species-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid rgba(134,142,150,0.18);background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.species-chip::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;opacity:0.72}
+.species-chip.species-dog{background:#fff4e6;color:#d9480f;border-color:#ffe8cc}
+.species-chip.species-cat{background:#e7f5ff;color:#1864ab;border-color:#d0ebff}
+.species-chip.species-rabbit{background:#f3f0ff;color:#6741d9;border-color:#e5dbff}
+.species-chip.species-bird{background:#e3fafc;color:#0b7285;border-color:#c5f6fa}
+@media (prefers-color-scheme: dark) {
+  .pet-mini-avatar{background:rgba(247,103,7,0.16);border-color:rgba(247,103,7,0.24)}
+  .pet-mini-avatar.species-cat{background:rgba(28,126,214,0.16);border-color:rgba(28,126,214,0.24)}
+  .pet-mini-avatar.species-rabbit{background:rgba(103,65,217,0.16);border-color:rgba(103,65,217,0.24)}
+  .pet-mini-avatar.species-bird{background:rgba(11,114,133,0.16);border-color:rgba(11,114,133,0.24)}
+  .species-chip.species-dog{background:rgba(247,103,7,0.16);border-color:rgba(247,103,7,0.24)}
+  .species-chip.species-cat{background:rgba(28,126,214,0.16);border-color:rgba(28,126,214,0.24)}
+  .species-chip.species-rabbit{background:rgba(103,65,217,0.16);border-color:rgba(103,65,217,0.24)}
+  .species-chip.species-bird{background:rgba(11,114,133,0.16);border-color:rgba(11,114,133,0.24)}
+}
+.occupancy-cell{display:grid;gap:7px;min-width:132px}
+.occupancy-cell strong{font-size:13px;color:var(--color-text-primary)}
+.occupancy-meter,.status-progress{position:relative;height:8px;border-radius:999px;background:rgba(134,142,150,0.14);overflow:hidden}
+.occupancy-meter span,.status-progress span{position:absolute;inset:0 auto 0 0;width:0;border-radius:999px;background:linear-gradient(90deg, var(--color-accent-teal), var(--color-primary));transition:width 0.55s ease}
+.status-cell{display:flex;align-items:center;gap:12px;min-width:220px}
+.status-progress{width:104px;flex-shrink:0}
+.status-progress-available span{background:linear-gradient(90deg, #2b8a3e, #8ce99a)}
+.status-progress-reserved span{background:linear-gradient(90deg, #f08c00, #ffd43b)}
+.status-progress-adopted span{background:linear-gradient(90deg, #1c7ed6, #74c0fc)}
+.status-progress-hold span{background:linear-gradient(90deg, #e03131, #ffa8a8)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:170px;padding:1.25rem;color:var(--color-text-secondary)}
+.empty-illustration{width:76px;height:76px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;background:linear-gradient(135deg, rgba(247,103,7,0.14), rgba(12,166,120,0.12));border:1px solid rgba(247,103,7,0.12);box-shadow:0 16px 34px rgba(33,37,41,0.08)}
+.empty-illustration svg{width:44px;height:44px;color:var(--color-primary);animation:sceneFloat 4.6s ease-in-out infinite}
+.empty-state-title{font-size:15px;font-weight:800;color:var(--color-text-secondary);margin-bottom:4px}
+.empty-state-message{font-size:13px;line-height:1.5;color:var(--color-text-tertiary);max-width:360px}
 .badge{display:inline-flex;align-items:center;padding:5px 12px;border-radius:var(--border-radius-xl);font-size:12px;font-weight:700;line-height:1;letter-spacing:0.5px}
 .badge-available{background:var(--color-background-success);color:var(--color-text-success);border:1px solid rgba(43,138,62,0.2)}
 .badge-reserved{background:var(--color-background-warning);color:var(--color-text-warning);border:1px solid rgba(217,72,15,0.2)}
@@ -149,27 +316,70 @@ tr:hover td{background:rgba(0,0,0,0.02)}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
 .analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
 .analytics-wide{grid-column:1/-1}
-	.bonus-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
-	.bonus-wide{grid-column:1/-1}
 	.muted-text{color:var(--color-text-tertiary);font-size:12px;line-height:1.5;margin-top:2px}
-	.mode-tabs{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
-	.mode-tab{font-family:var(--font-sans);font-size:13px;font-weight:700;border:none;border-radius:var(--border-radius-sm);padding:8px 12px;background:transparent;color:var(--color-text-secondary);cursor:pointer;transition:all 0.2s ease;}
-	.mode-tab:hover:not(.active){color:var(--color-text-primary)}
-	.mode-tab.active{background:var(--color-background-primary);color:var(--color-primary);box-shadow:var(--shadow-sm)}
 	.assistant-control{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem;background:var(--color-background-primary);padding:16px 20px;border-radius:var(--border-radius-lg);box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,0.8);}
 	@media (prefers-color-scheme: dark) { .assistant-control{background:rgba(37,38,43,0.6);border-color:rgba(255,255,255,0.05);} }
 	.assistant-control label{font-size:12px;font-weight:700;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.5px}
 	.assistant-control select{font-family:var(--font-sans);font-size:13px;font-weight:600;padding:8px 32px 8px 12px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;-webkit-appearance:none;color:var(--color-text-primary);cursor:pointer;transition:all 0.2s;box-shadow:var(--shadow-sm);}
 	.assistant-control select:hover{border-color:var(--color-primary);background-color:var(--color-background-primary);}
 	.assistant-control select:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-primary-light);outline:none;}
-	.sql-block{font-family:var(--font-mono);font-size:13px;white-space:pre-wrap;line-height:1.6;background:#1e1e1e;border-radius:var(--border-radius-md);padding:12px 16px;color:#d4d4d4;overflow-x:auto}
+	.sql-panel{position:relative;margin-bottom:1rem;border:1px solid var(--sql-panel-border);border-radius:var(--border-radius-lg);background:var(--sql-panel-surface);box-shadow:var(--shadow-md);overflow:hidden}
+	.sql-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg, var(--color-primary) 0%, rgba(247,103,7,0.16) 100%)}
+	.sql-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:16px 18px 14px;background:var(--sql-panel-header);border-bottom:1px solid var(--color-border-tertiary)}
+	.sql-panel-meta{display:flex;flex-direction:column;gap:4px}
+	.sql-panel-kicker{font-size:11px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:var(--color-primary)}
+	.sql-panel-title{font-size:14px;font-weight:700;color:var(--color-text-primary);letter-spacing:-0.2px}
+	.sql-panel-subtitle{font-size:12px;color:var(--color-text-secondary)}
+	.sql-panel-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+	.sql-panel-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(247,103,7,0.1);color:var(--color-primary);font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase}
+	.sql-copy-btn{font-family:var(--font-sans);font-size:12px;font-weight:700;padding:8px 12px;border:1px solid var(--sql-panel-border);border-radius:var(--border-radius-md);background:rgba(255,255,255,0.72);color:var(--color-text-primary);cursor:pointer;transition:all 0.2s ease;box-shadow:var(--shadow-sm)}
+	.sql-copy-btn:hover{transform:translateY(-1px);border-color:rgba(247,103,7,0.28);background:var(--color-primary-light);color:var(--color-primary)}
+	.sql-copy-btn:active{transform:translateY(0)}
+	.sql-block{margin:0;padding:18px 20px;font-family:var(--font-mono);font-size:13px;white-space:pre-wrap;line-height:1.75;background:var(--sql-code-surface);border-top:1px solid var(--sql-code-border);color:var(--sql-code-text);overflow-x:auto}
+	.sql-token-keyword{color:var(--sql-token-keyword);font-weight:700}
+	.sql-token-function{color:var(--sql-token-function);font-weight:700}
+	.sql-token-string{color:var(--sql-token-string)}
+	.sql-token-number{color:var(--sql-token-number);font-weight:600}
+	.sql-token-operator{color:var(--sql-token-operator)}
+	.sql-token-comment{color:var(--sql-token-comment);font-style:italic}
+	@media (prefers-color-scheme: dark) { .sql-copy-btn{background:rgba(24,25,28,0.72);color:var(--color-text-primary);} }
+	@media (max-width: 700px) {
+	  .sql-panel-header{padding:14px 14px 12px}
+	  .sql-block{padding:16px}
+	  .sql-panel-actions{width:100%;justify-content:space-between}
+	  .sql-copy-btn{width:auto}
+	}
 .activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px;margin:0 -12px;border-radius:var(--border-radius-md);border-bottom:1px solid transparent;transition:background 0.2s}
 .activity-item:not(:last-child){border-bottom-color:var(--color-border-tertiary)}
 .activity-item:hover{background:var(--color-background-secondary);border-bottom-color:transparent}
-.activity-dot.dot-green + div .activity-type{background:var(--color-background-success);color:var(--color-text-success)}
-.activity-dot.dot-amber + div .activity-type{background:var(--color-background-warning);color:var(--color-text-warning)}
-.activity-dot.dot-blue + div .activity-type{background:var(--color-background-info);color:var(--color-text-info)}
-.activity-dot.dot-red + div .activity-type{background:var(--color-background-danger);color:var(--color-text-danger)}
+/* Distinct colors for activity tags */
+.activity-type-adoption { background: #e6fcf5; color: #0ca678; border: 1px solid #c3fae8; }
+.activity-type-application_review { background: #fff4e6; color: #e8590c; border: 1px solid #ffe8cc; }
+.activity-type-application { background: #e7f5ff; color: #1c7ed6; border: 1px solid #d0ebff; }
+.activity-type-applicant { background: #f3f0ff; color: #5c7cfa; border: 1px solid #e5dbff; }
+.activity-type-medical { background: #fff0f6; color: #d6336c; border: 1px solid #ffdeeb; }
+.activity-type-vaccination { background: #ebfbee; color: #2b8a3e; border: 1px solid #d3f9d8; }
+.activity-type-care_assignment { background: #fff5f5; color: #e03131; border: 1px solid #ffe3e3; }
+.activity-type-follow_up { background: #f8f9fa; color: #495057; border: 1px solid #f1f3f5; }
+.activity-type-volunteer { background: #e3fafc; color: #089981; border: 1px solid #c5f6fa; }
+.activity-type-pet { background: #fff9db; color: #f08c00; border: 1px solid #ffec99; }
+.activity-type-shelter { background: #f4fce3; color: #94d82d; border: 1px solid #e9fac8; }
+.activity-type-pet_intake { background: #e7f5ff; color: #228be6; border: 1px solid #d0ebff; }
+
+@media (prefers-color-scheme: dark) {
+  .activity-type-adoption { background: rgba(12, 166, 120, 0.15); color: #20c997; border: 1px solid rgba(12, 166, 120, 0.3); }
+  .activity-type-application_review { background: rgba(232, 89, 12, 0.15); color: #ff922b; border: 1px solid rgba(232, 89, 12, 0.3); }
+  .activity-type-application { background: rgba(28, 126, 214, 0.15); color: #339af0; border: 1px solid rgba(28, 126, 214, 0.3); }
+  .activity-type-applicant { background: rgba(92, 124, 250, 0.15); color: #748ffc; border: 1px solid rgba(92, 124, 250, 0.3); }
+  .activity-type-medical { background: rgba(214, 51, 108, 0.15); color: #f06595; border: 1px solid rgba(214, 51, 108, 0.3); }
+  .activity-type-vaccination { background: rgba(43, 138, 62, 0.15); color: #51cf66; border: 1px solid rgba(43, 138, 62, 0.3); }
+  .activity-type-care_assignment { background: rgba(224, 49, 49, 0.15); color: #ff6b6b; border: 1px solid rgba(224, 49, 49, 0.3); }
+  .activity-type-follow_up { background: rgba(73, 80, 87, 0.15); color: #adb5bd; border: 1px solid rgba(73, 80, 87, 0.3); }
+  .activity-type-volunteer { background: rgba(8, 153, 129, 0.15); color: #20c997; border: 1px solid rgba(8, 153, 129, 0.3); }
+  .activity-type-pet { background: rgba(240, 140, 0, 0.15); color: #fcc419; border: 1px solid rgba(240, 140, 0, 0.3); }
+  .activity-type-shelter { background: rgba(148, 216, 45, 0.15); color: #b2f2bb; border: 1px solid rgba(148, 216, 45, 0.3); }
+  .activity-type-pet_intake { background: rgba(34, 139, 230, 0.15); color: #339af0; border: 1px solid rgba(34, 139, 230, 0.3); }
+}
 .activity-feed{max-height:560px;overflow-y:auto;padding-right:6px}
 .activity-filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .activity-filter-chip{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:8px 12px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:12px;font-weight:700;letter-spacing:0.4px;cursor:pointer;transition:all 0.2s ease}
@@ -177,7 +387,19 @@ tr:hover td{background:rgba(0,0,0,0.02)}
 .activity-filter-chip.active{background:var(--color-primary-light);color:var(--color-primary)}
 .activity-filter-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:rgba(0,0,0,0.06);font-size:11px;font-weight:700}
 .activity-filter-chip.active .activity-filter-count{background:rgba(247,103,7,0.15)}
-.activity-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:6px;box-shadow:0 0 0 3px var(--color-background-primary)}
+.activity-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:6px;background:#868e96;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(134,142,150,0.18)}
+.activity-dot-adoption{background:#087f5b;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(8,127,91,0.18)}
+.activity-dot-application_review{background:#e67700;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(230,119,0,0.2)}
+.activity-dot-application{background:#1971c2;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(25,113,194,0.18)}
+.activity-dot-applicant{background:#7048e8;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(112,72,232,0.18)}
+.activity-dot-medical{background:#c2255c;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(194,37,92,0.18)}
+.activity-dot-vaccination{background:#2b8a3e;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(43,138,62,0.18)}
+.activity-dot-care_assignment{background:#e03131;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(224,49,49,0.18)}
+.activity-dot-follow_up{background:#495057;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(73,80,87,0.18)}
+.activity-dot-volunteer{background:#0b7285;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(11,114,133,0.18)}
+.activity-dot-pet{background:#d9480f;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(217,72,15,0.2)}
+.activity-dot-shelter{background:#5c940d;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(92,148,13,0.18)}
+.activity-dot-pet_intake{background:#364fc7;box-shadow:0 0 0 3px var(--color-background-primary),0 0 0 5px rgba(54,79,199,0.18)}
 .dot-green{background:var(--color-text-success)}.dot-amber{background:var(--color-text-warning)}.dot-blue{background:var(--color-text-info)}.dot-red{background:var(--color-text-danger)}
 .activity-text{font-size:14px;line-height:1.5;color:var(--color-text-primary)}
 .activity-time{font-size:12px;color:var(--color-text-tertiary);margin-top:4px;font-weight:500}
@@ -185,20 +407,24 @@ tr:hover td{background:rgba(0,0,0,0.02)}
 .activity-type{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.4px;background:var(--color-background-secondary);color:var(--color-text-secondary);text-transform:uppercase}
 .activity-empty{padding:24px 0;color:var(--color-text-secondary);font-size:14px}
 .avatar{width:36px;height:36px;border-radius:50%;background:var(--color-primary-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--color-primary);flex-shrink:0}
+.avatar{background:linear-gradient(135deg, rgba(247,103,7,0.14), rgba(12,166,120,0.14));border:1px solid rgba(247,103,7,0.12);color:var(--color-primary);font-weight:800}
 
 /* ── Overlay: fixed fullscreen dim layer ── */
 .overlay{
   display:none;
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,0.5);
+  background:rgba(0,0,0,0.45);
   backdrop-filter:blur(4px);
   z-index:100;
   align-items:center;
   justify-content:center;
   padding:2rem;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity 0.22s ease, visibility 0.22s ease;
 }
-.overlay.open{display:flex;animation:fadeIn 0.2s ease}
+.overlay.open{display:flex;opacity:1;visibility:visible}
 
 /* ── Modal box sits on top of the dim layer ── */
 .modal-box{
@@ -211,14 +437,166 @@ tr:hover td{background:rgba(0,0,0,0.02)}
   overflow-y:auto;
   position:relative;
   box-shadow:var(--shadow-lg);
+  transform:translateY(12px) scale(0.98);
+  opacity:0;
+  transition:transform 0.22s ease, opacity 0.22s ease;
 }
+.overlay.open .modal-box{transform:translateY(0) scale(1);opacity:1}
 .modal-box-wide{width:680px}
+/* ── Detail View Modal ── */
+.modal-view{
+  width:min(760px, calc(100vw - 32px));
+  max-width:760px;
+  padding:0;
+  overflow:hidden;
+  background:var(--color-background-primary);
+  border:1px solid var(--color-border-secondary);
+  border-radius:var(--border-radius-lg);
+  box-shadow:var(--shadow-lg);
+}
+.modal-view .modal-header{
+  position:relative;
+  padding:24px 28px 18px;
+  border-bottom:1px solid var(--color-border-tertiary);
+  background:var(--color-background-primary);
+}
+.modal-view .modal-close{
+  top:18px;
+  right:18px;
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-sm);
+  background:var(--color-background-secondary);
+  color:var(--color-text-secondary);
+  font-size:16px;
+  box-shadow:none;
+}
+.modal-view .modal-close:hover{
+  background:var(--color-primary-light);
+  color:var(--color-primary);
+  border-color:rgba(247,103,7,0.25);
+}
+.modal-view .modal-title{
+  margin:0;
+  padding-right:52px;
+  display:block;
+  color:var(--color-text-primary);
+}
+.modal-view .modal-title::before{content:none}
+.detail-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+}
+.detail-kicker{
+  margin-bottom:6px;
+  color:var(--color-primary);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:0.7px;
+  line-height:1.2;
+  text-transform:uppercase;
+}
+.detail-name{
+  font-size:24px;
+  line-height:1.2;
+  font-weight:800;
+  color:var(--color-text-primary);
+}
+.detail-subtitle{
+  margin-top:6px;
+  font-size:13px;
+  font-weight:500;
+  color:var(--color-text-secondary);
+  line-height:1.5;
+}
+.detail-status{
+  flex-shrink:0;
+  margin-top:2px;
+}
+.modal-view .modal-body{
+  padding:20px 28px 28px;
+  max-height:calc(90vh - 104px);
+  overflow-y:auto;
+  background:var(--color-background-primary);
+}
+.detail-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  overflow:hidden;
+  background:var(--color-background-primary);
+  border:1px solid var(--color-border-secondary);
+  border-radius:var(--border-radius-sm);
+  box-shadow:var(--shadow-sm);
+}
+.detail-field{
+  min-height:74px;
+  padding:14px 16px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:7px;
+  border-right:1px solid var(--color-border-tertiary);
+  border-bottom:1px solid var(--color-border-tertiary);
+}
+.detail-field:nth-child(2n){border-right:none}
+.detail-field-wide{
+  grid-column:1/-1;
+  border-right:none;
+}
+.detail-field:nth-last-child(1){border-bottom:none}
+.detail-label{
+  color:var(--color-text-tertiary);
+  font-size:11px;
+  font-weight:800;
+  line-height:1.2;
+  letter-spacing:0.7px;
+  text-transform:uppercase;
+}
+.detail-value{
+  color:var(--color-text-primary);
+  font-size:14px;
+  font-weight:600;
+  line-height:1.5;
+  word-break:break-word;
+}
+.detail-note{
+  min-height:auto;
+  justify-content:flex-start;
+}
+.detail-note .detail-value{
+  color:var(--color-text-secondary);
+  font-weight:500;
+  white-space:pre-wrap;
+}
+.detail-empty{
+  color:var(--color-text-tertiary);
+  font-weight:500;
+}
+@media (max-width: 700px) {
+  .overlay{padding:12px}
+  .modal-view{width:calc(100vw - 24px);max-height:calc(100vh - 24px)}
+  .modal-view .modal-header{padding:20px 20px 16px}
+  .modal-view .modal-body{padding:16px 20px 20px}
+  .detail-heading{flex-direction:column;gap:12px}
+  .detail-grid{grid-template-columns:1fr}
+  .detail-field{border-right:none}
+  .detail-name{font-size:21px}
+}
 .modal-close{position:absolute;right:1.5rem;top:1.5rem;cursor:pointer;font-size:20px;line-height:1;color:var(--color-text-tertiary);background:none;border:none;transition:color 0.2s}
 .modal-close:hover{color:var(--color-text-primary)}
 .modal-title{font-size:20px;font-weight:700;margin-bottom:1.5rem;color:var(--color-text-primary)}
-.field-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--color-border-tertiary);font-size:14px}
+.field-list{background:var(--color-background-primary);border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;box-shadow:var(--shadow-sm)}
+.field-row{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 16px;border-bottom:1px solid var(--color-border-tertiary);font-size:14px;transition:background 0.2s}
 .field-row:last-child{border-bottom:none}
-.field-label{color:var(--color-text-secondary);flex-shrink:0;margin-right:16px;font-weight:500}
+.field-row:hover{background:var(--color-background-secondary)}
+.field-label{color:var(--color-text-secondary);flex-shrink:0;margin-right:24px;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:0.5px}
+.field-value{color:var(--color-text-primary);font-weight:500;text-align:right;word-break:break-word}
 .form-group{margin-bottom:1.25rem}
 .form-label{font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:6px;display:block}
 .form-control{font-family:var(--font-sans);width:100%;font-size:14px;padding:10px 12px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-sm);background:var(--color-background-primary);color:var(--color-text-primary);transition:all 0.2s;outline:none}
@@ -251,16 +629,41 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
 .toast-success::before{background:var(--color-text-success)}
 .toast-info::before{background:var(--color-text-info)}
 .toast-error::before{background:var(--color-text-danger)}
+@media (max-width: 1180px) {
+  .hero-banner{grid-template-columns:1fr;min-height:0;padding:2rem}
+  .hero-stage{display:none}
+}
 @media (max-width: 900px) {
   .stat-grid{grid-template-columns:repeat(2,1fr)}
-  .two-col,.analytics-grid,.bonus-grid{grid-template-columns:1fr}
-  .analytics-wide,.bonus-wide{grid-column:auto}
+  .hero-banner{padding:1.75rem;gap:1.25rem}
+  .hero-title{font-size:34px}
+  .hero-signal-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .two-col,.analytics-grid{grid-template-columns:1fr}
+  .analytics-wide{grid-column:auto}
   .sidebar{width:200px}
 }
+@media (max-width: 760px) {
+  .hero-signal-grid{grid-template-columns:1fr}
+  .hero-signal-card{min-height:154px}
+}
 @media (max-width: 600px) {
-  .app{flex-direction:column}
-  .sidebar{width:100%;height:auto;border-right:none;border-bottom:1px solid var(--color-border-tertiary);padding:1rem}
-  .main{padding:1rem}
+  .app{flex-direction:column;overflow-x:hidden}
+  .sidebar{display:block;width:100%;height:auto;max-height:154px;white-space:nowrap;overflow-x:auto;overflow-y:hidden;border-right:none;border-bottom:1px solid var(--color-border-tertiary);padding:0.85rem 1rem 0.95rem}
+  .sidebar-logo{position:sticky;left:0;z-index:2;background:linear-gradient(90deg, rgba(255,255,255,0.92), rgba(255,255,255,0.68));padding:0 0.25rem 0.75rem;margin-bottom:0}
+  .nav-item{display:inline-flex;width:auto;margin:0 6px 0 0;padding:10px 12px;vertical-align:top}
+  .nav-item:hover{transform:translateY(-1px)}
+  .main{width:100%;min-width:0;overflow-x:hidden;padding:1rem}
+  .hero-banner{padding:1.25rem;border-radius:12px}
+  .hero-title{font-size:30px}
+  .hero-command-panel{padding:14px;border-radius:18px}
+  .hero-command-value{font-size:28px}
+  .hero-footer{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr}
+  .status-cell{min-width:180px}
+  .toolbar input{min-width:100%;width:100%}
+}
+@media (prefers-color-scheme: dark) and (max-width: 600px) {
+  .sidebar-logo{background:linear-gradient(90deg, rgba(37,38,43,0.94), rgba(37,38,43,0.68))}
 }
 
 #page-analytics table th { position: relative; padding-right: 20px; cursor: pointer; user-select: none; }
@@ -280,49 +683,45 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
     <h2>PawTrack</h2>
     <p>Adoption Center System</p>
   </div>
-  <div class="nav-item active" onclick="showPage('dashboard',this)">
+  <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
     Dashboard
   </div>
-  <div class="nav-item" onclick="showPage('shelters',this)">
+  <div class="nav-item" data-page="shelters" onclick="showPage('shelters',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 14V6l6-4 6 4v8" stroke="currentColor" stroke-width="1.2"/><path d="M6 14V9h4v5" stroke="currentColor" stroke-width="1.2"/><path d="M4 7.5h8" stroke="currentColor" stroke-width="1.2"/></svg>
     Shelters
   </div>
-  <div class="nav-item" onclick="showPage('pets',this)">
+  <div class="nav-item" data-page="pets" onclick="showPage('pets',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.2"/><circle cx="3" cy="4" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="13" cy="4" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 12c0-2 2-3 6-3s6 1 6 3" stroke="currentColor" stroke-width="1.2"/></svg>
     Pets
   </div>
-  <div class="nav-item" onclick="showPage('applicants',this)">
+  <div class="nav-item" data-page="applicants" onclick="showPage('applicants',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2.5 14c.6-3.2 2.5-5 5.5-5s4.9 1.8 5.5 5" stroke="currentColor" stroke-width="1.2"/></svg>
     Applicants
   </div>
-  <div class="nav-item" onclick="showPage('applications',this)">
+  <div class="nav-item" data-page="applications" onclick="showPage('applications',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="5" x2="11" y2="5" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="11" x2="8" y2="11" stroke="currentColor" stroke-width="1.2"/></svg>
     Applications
   </div>
-  <div class="nav-item" onclick="showPage('adoptions',this)">
+  <div class="nav-item" data-page="adoptions" onclick="showPage('adoptions',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3L13 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
     Adoptions
   </div>
-  <div class="nav-item" onclick="showPage('medical',this)">
+  <div class="nav-item" data-page="medical" onclick="showPage('medical',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 3V2M11 3V2" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="8" y1="9" x2="8" y2="12" stroke="currentColor" stroke-width="1.2"/><line x1="6.5" y1="10.5" x2="9.5" y2="10.5" stroke="currentColor" stroke-width="1.2"/></svg>
     Medical
   </div>
-  <div class="nav-item" onclick="showPage('volunteers',this)">
+  <div class="nav-item" data-page="volunteers" onclick="showPage('volunteers',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 13c0-2.5 2-4 5-4s5 1.5 5 4" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M12 9c2 0 3 1 3 2.5" stroke="currentColor" stroke-width="1.2"/></svg>
     Volunteers
   </div>
-  <div class="nav-item" onclick="showPage('analytics',this)">
+  <div class="nav-item" data-page="analytics" onclick="showPage('analytics',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 13.5h12" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="7" width="2.5" height="5" rx=".7" stroke="currentColor" stroke-width="1.2"/><rect x="7" y="4" width="2.5" height="8" rx=".7" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="2" width="2.5" height="10" rx=".7" stroke="currentColor" stroke-width="1.2"/></svg>
     Analytics
   </div>
-  <div class="nav-item" onclick="showPage('assistant',this)">
+  <div class="nav-item" data-page="assistant" onclick="showPage('assistant',this)">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M4 11H2.5A1.5 1.5 0 0 1 1 9.5v-6A1.5 1.5 0 0 1 2.5 2h11A1.5 1.5 0 0 1 15 3.5v6a1.5 1.5 0 0 1-1.5 1.5H10l-3 3v-3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
     Assistant
-  </div>
-  <div class="nav-item" onclick="showPage('llm',this)">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 12v2M11 12v2M5.5 6.5h.01M10.5 6.5h.01M6 9h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-    LLM Bonus
   </div>
 </nav>
 
@@ -331,26 +730,140 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
 
   <!-- Dashboard -->
   <div id="page-dashboard" class="page active">
-    <div class="page-title" style="display:flex; align-items:center; gap:12px;"><div style="width:40px;height:40px;background:var(--color-primary-light);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--color-primary);"><svg width="24" height="24" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></div>Dashboard</div>
+    <div class="page-title">Dashboard</div>
 
-    <div class="hero-banner" style="background:linear-gradient(135deg, var(--color-primary) 0%, #d9480f 100%); border-radius:var(--border-radius-lg); padding:2rem; margin-bottom:2rem; color:white; display:flex; align-items:center; justify-content:space-between; box-shadow:var(--shadow-md); position:relative; overflow:hidden;">
-      <div style="z-index:2; max-width:600px;">
-        <h2 style="font-size:28px; font-weight:800; margin-bottom:0.5rem; letter-spacing:-0.5px;">Welcome to PawTrack! 🐾</h2>
-        <p style="font-size:15px; opacity:0.9; line-height:1.5;">Manage shelters, track adoptions, and help more pets find their forever homes. Check your dashboard below for the latest activity.</p>
+    <div class="hero-banner">
+      <div class="hero-copy">
+        <h2 class="hero-title">PawTrack adoption command center</h2>
+        <p class="hero-description">Coordinate shelter capacity, medical history, adoption reviews, and follow-up care from one focused dashboard.</p>
+        <div class="hero-command-panel">
+          <div class="hero-command-copy">
+            <div class="hero-command-summary">
+              <strong class="hero-command-value" id="hero-primary-insight">--</strong>
+              <p class="hero-command-meta" id="hero-secondary-insight">Loading live shelter overview...</p>
+            </div>
+          </div>
+          <div class="hero-signal-grid">
+            <div class="hero-signal-card dashboard-nav-card" data-tone="green" data-nav-page="pets" role="button" tabindex="0" aria-label="Open pets page">
+              <div class="hero-signal-head">
+                <span class="hero-signal-label">Adoptable</span>
+                <span class="dashboard-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span>
+              </div>
+              <div class="hero-signal-main">
+                <strong class="hero-signal-value" id="hero-available-count">--</strong>
+                <span class="hero-signal-note" id="hero-available-detail">adoption-ready pets</span>
+              </div>
+              <span class="dashboard-card-caption">Open pets</span>
+            </div>
+            <div class="hero-signal-card dashboard-nav-card" data-tone="amber" data-nav-page="applications" role="button" tabindex="0" aria-label="Open applications page">
+              <div class="hero-signal-head">
+                <span class="hero-signal-label">In review</span>
+                <span class="dashboard-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span>
+              </div>
+              <div class="hero-signal-main">
+                <strong class="hero-signal-value" id="hero-pending-count">--</strong>
+                <span class="hero-signal-note" id="hero-pending-detail">applications waiting for staff</span>
+              </div>
+              <span class="dashboard-card-caption">Review applications</span>
+            </div>
+            <div class="hero-signal-card dashboard-nav-card" data-tone="blue" data-nav-page="shelters" role="button" tabindex="0" aria-label="Open shelters page">
+              <div class="hero-signal-head">
+                <span class="hero-signal-label">Shelters</span>
+                <span class="dashboard-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span>
+              </div>
+              <div class="hero-signal-main">
+                <strong class="hero-signal-value" id="hero-shelter-count">--</strong>
+                <span class="hero-signal-note" id="hero-shelter-detail">locations live today</span>
+              </div>
+              <span class="dashboard-card-caption">Open shelters</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div style="font-size: 72px; line-height: 1; display:flex; gap: 15px; position:relative; z-index:2;">
-        <div style="transform: rotate(-15deg); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));">🐶</div>
-        <div style="transform: rotate(10deg) translateY(15px); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));">🐱</div>
-        <div style="transform: rotate(20deg) translateY(-10px); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));">🐰</div>
+      <div class="hero-stage" aria-hidden="true">
+        <svg class="shelter-scene" viewBox="0 0 520 330" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="sceneGround" x1="86" y1="244" x2="442" y2="304" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FFF4E6"/>
+              <stop offset="0.55" stop-color="#D3F9D8"/>
+              <stop offset="1" stop-color="#D0EBFF"/>
+            </linearGradient>
+            <linearGradient id="sceneHouse" x1="188" y1="88" x2="351" y2="247" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FFFFFF"/>
+              <stop offset="1" stop-color="#FFE8CC"/>
+            </linearGradient>
+            <filter id="sceneShadow" x="40" y="36" width="440" height="280" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+              <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#212529" flood-opacity="0.18"/>
+            </filter>
+          </defs>
+          <path d="M92 256C130 212 189 200 251 218C313 236 360 213 414 242C460 267 451 306 386 311H140C86 309 66 286 92 256Z" fill="url(#sceneGround)" opacity="0.96"/>
+          <g class="svg-float" filter="url(#sceneShadow)">
+            <path d="M168 159L260 83L352 159V255H168V159Z" fill="url(#sceneHouse)"/>
+            <path d="M142 164L260 65L378 164" stroke="#FFE3C2" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M142 164L260 65L378 164" stroke="#F76707" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="220" y="177" width="78" height="78" rx="18" fill="#1864AB"/>
+            <path d="M246 255V216C246 204 256 194 268 194C280 194 290 204 290 216V255" fill="#0B7285"/>
+            <rect x="186" y="173" width="42" height="38" rx="10" fill="#E7F5FF"/>
+            <path d="M207 173V211M186 192H228" stroke="#74C0FC" stroke-width="5" stroke-linecap="round"/>
+            <rect x="304" y="173" width="42" height="38" rx="10" fill="#EBFBEE"/>
+            <path d="M325 173V211M304 192H346" stroke="#8CE99A" stroke-width="5" stroke-linecap="round"/>
+            <path d="M250 120C253 111 267 111 270 120C273 128 266 137 260 141C254 137 247 128 250 120Z" fill="#D6336C"/>
+          </g>
+          <g class="svg-float svg-float-delayed">
+            <path d="M112 232C112 213 128 200 148 200H182C205 200 221 215 221 236V251H112V232Z" fill="#FFC078"/>
+            <path class="tail-wag" d="M107 225C87 215 82 197 93 186" stroke="#FFC078" stroke-width="14" stroke-linecap="round"/>
+            <circle cx="154" cy="188" r="32" fill="#FFD8A8"/>
+            <path d="M132 170L119 146L148 160" fill="#FFD8A8"/>
+            <path d="M175 160L201 145L190 174" fill="#FFD8A8"/>
+            <circle cx="144" cy="187" r="4" fill="#3D2B1F"/>
+            <circle cx="166" cy="187" r="4" fill="#3D2B1F"/>
+            <path d="M153 200C157 204 164 204 168 200" stroke="#3D2B1F" stroke-width="4" stroke-linecap="round"/>
+            <path d="M126 251V268M199 251V268" stroke="#9C6644" stroke-width="11" stroke-linecap="round"/>
+          </g>
+          <g class="svg-float">
+            <path d="M330 238C330 215 348 200 372 200H394C415 200 431 216 431 238V252H330V238Z" fill="#ADB5BD"/>
+            <path class="cat-tail" d="M424 226C458 207 449 174 422 182" stroke="#ADB5BD" stroke-width="12" stroke-linecap="round"/>
+            <circle cx="374" cy="188" r="30" fill="#CED4DA"/>
+            <path d="M350 169L344 145L365 160" fill="#CED4DA"/>
+            <path d="M391 160L414 146L405 171" fill="#CED4DA"/>
+            <circle cx="365" cy="187" r="4" fill="#212529"/>
+            <circle cx="386" cy="187" r="4" fill="#212529"/>
+            <path d="M373 198C377 202 383 202 387 198" stroke="#212529" stroke-width="4" stroke-linecap="round"/>
+            <path d="M348 252V267M409 252V267" stroke="#868E96" stroke-width="10" stroke-linecap="round"/>
+          </g>
+          <g class="heart-pop">
+            <path d="M410 104C414 94 429 94 432 105C436 117 424 128 421 130C418 127 406 116 410 104Z" fill="#FFDEEB"/>
+            <path d="M96 118C99 109 112 109 115 119C118 129 108 138 105 140C102 137 92 128 96 118Z" fill="#FFD43B"/>
+          </g>
+          <g fill="#FFFFFF" opacity="0.86">
+            <g class="paw-step" style="animation-delay:0.1s"><ellipse cx="232" cy="296" rx="6" ry="8"/><circle cx="221" cy="287" r="3"/><circle cx="230" cy="284" r="3"/><circle cx="239" cy="287" r="3"/></g>
+            <g class="paw-step" style="animation-delay:0.75s"><ellipse cx="268" cy="288" rx="6" ry="8"/><circle cx="257" cy="279" r="3"/><circle cx="266" cy="276" r="3"/><circle cx="275" cy="279" r="3"/></g>
+            <g class="paw-step" style="animation-delay:1.4s"><ellipse cx="305" cy="296" rx="6" ry="8"/><circle cx="294" cy="287" r="3"/><circle cx="303" cy="284" r="3"/><circle cx="312" cy="287" r="3"/></g>
+            <g class="paw-step" style="animation-delay:2.05s"><ellipse cx="341" cy="288" rx="6" ry="8"/><circle cx="330" cy="279" r="3"/><circle cx="339" cy="276" r="3"/><circle cx="348" cy="279" r="3"/></g>
+          </g>
+        </svg>
       </div>
-      <div style="position:absolute; top:-50%; right:-10%; width:300px; height:300px; background:radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%); border-radius:50%; z-index:1;"></div>
+      <div class="hero-footer">
+        <div class="hero-feature">
+          <span class="hero-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 7h16M7 4v6M17 4v6"/><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 14h3M14 14h2M8 17h6"/></svg></span>
+          <div><strong>Intake tracking</strong><p>Keep shelter capacity, pet status, and new arrivals visible.</p></div>
+        </div>
+        <div class="hero-feature">
+          <span class="hero-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 12h-4l-3 8L9 4l-3 8H2"/><path d="M12 21c-4-3-7-6-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 4-3 7-7 10Z"/></svg></span>
+          <div><strong>Health timeline</strong><p>See medical visits, vaccinations, and care work in context.</p></div>
+        </div>
+        <div class="hero-feature">
+          <span class="hero-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6 9 17l-5-5"/><path d="M4 20h16"/><path d="M15 4h5v5"/></svg></span>
+          <div><strong>Adoption handoff</strong><p>Review applications, records, and follow-ups without losing flow.</p></div>
+        </div>
+      </div>
     </div>
 
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-label" style="display:flex;align-items:center;justify-content:space-between"><span>Total pets</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg></div><div class="stat-value" id="dash-total-pets">--</div><div class="stat-sub" id="dash-shelter-count">loading shelters</div></div>
-      <div class="stat-card"><div class="stat-label" style="display:flex;align-items:center;justify-content:space-between;color:#3B6D11"><span>Available now</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div><div class="stat-value" style="color:#3B6D11" id="dash-available-count">--</div><div class="stat-sub">ready to adopt</div></div>
-      <div class="stat-card"><div class="stat-label" style="display:flex;align-items:center;justify-content:space-between;color:#854F0B"><span>Pending review</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div><div class="stat-value" style="color:#854F0B" id="dash-pending-count">--</div><div class="stat-sub">applications</div></div>
-      <div class="stat-card"><div class="stat-label" style="display:flex;align-items:center;justify-content:space-between;color:#185FA5"><span>This month adoptions</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg></div><div class="stat-value" style="color:#185FA5" id="dash-monthly-adoptions">--</div><div class="stat-sub">successful adoptions</div></div>
+      <div class="stat-card dashboard-nav-card" data-tone="orange" data-nav-page="pets" role="button" tabindex="0" aria-label="Open pet directory"><div class="stat-top"><span class="stat-label">Total pets</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg></span></div><div class="stat-value" id="dash-total-pets">--</div><div class="stat-sub" id="dash-shelter-count">loading shelters</div><div class="stat-link-row"><span class="stat-link-text">Open pet directory</span><span class="dashboard-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div></div>
+      <div class="stat-card dashboard-nav-card" data-tone="blue" data-nav-page="shelters" role="button" tabindex="0" aria-label="Open shelter directory"><div class="stat-top"><span class="stat-label">Peak occupancy</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11 12 5l8 6"/><path d="M7 10.5V19h10v-8.5"/><path d="M12 13v6"/><path d="M9.5 16H14.5"/></svg></span></div><div class="stat-value" id="dash-peak-occupancy">--</div><div class="stat-sub" id="dash-peak-occupancy-sub">loading shelter pressure</div><div class="stat-link-row"><span class="stat-link-text">Open shelters</span><span class="dashboard-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div></div>
+      <div class="stat-card dashboard-nav-card" data-tone="green" data-nav-page="volunteers" role="button" tabindex="0" aria-label="Open volunteers page"><div class="stat-top"><span class="stat-label">Active volunteers</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M4 20c0-3 2.5-5 5-5s5 2 5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M15.5 20c0-2.2 1.7-3.9 4.5-4.5"/></svg></span></div><div class="stat-value" id="dash-active-volunteers">--</div><div class="stat-sub" id="dash-active-volunteers-sub">loading volunteer coverage</div><div class="stat-link-row"><span class="stat-link-text">Open volunteers</span><span class="dashboard-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div></div>
+      <div class="stat-card dashboard-nav-card" data-tone="amber" data-nav-page="adoptions" role="button" tabindex="0" aria-label="Open adoptions page"><div class="stat-top"><span class="stat-label">This month adoptions</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 11v10"/><path d="M15 5.5 14 10h5.5a2 2 0 0 1 2 2.3l-1.3 7A2 2 0 0 1 18.2 21H7"/><path d="M7 11H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h3"/><path d="M15 5.5C14.5 3.5 13.3 2 11.5 2L7 11"/></svg></span></div><div class="stat-value" id="dash-monthly-adoptions">--</div><div class="stat-sub" id="dash-monthly-adoptions-sub">successful adoptions this month</div><div class="stat-link-row"><span class="stat-link-text">Open adoptions</span><span class="dashboard-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div></div>
     </div>
     <div class="two-col">
       <div class="section-card">
@@ -562,17 +1075,13 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
   </div>
 
   <!-- Assistant -->
-	  <div id="page-assistant" class="page">
+	 <div id="page-assistant" class="page">
 	    <div class="page-title" style="display:flex; align-items:center; gap:12px;">Smart Assistant</div>
 	    <div class="section-card">
 	      <div class="section-header"><span class="section-title">Natural language query assistant</span></div>
 	      <div class="assistant-control">
-	        <div class="mode-tabs" aria-label="Assistant mode">
-	          <button class="mode-tab active" id="llm-mode-template" type="button" onclick="setLlmMode('template')">Reviewed template</button>
-	          <button class="mode-tab" id="llm-mode-generated" type="button" onclick="setLlmMode('generated')">GLM-generated SQL</button>
-	        </div>
-	        <label id="llm-method-label" style="display:none">Prompt method</label>
-	        <select id="llm-method-select" style="display:none">
+	        <label id="llm-method-label">Prompt method</label>
+	        <select id="llm-method-select">
 	          <option value="schema_grounded" selected>schema_grounded</option>
 	          <option value="zero_shot">zero_shot</option>
 	          <option value="few_shot">few_shot</option>
@@ -584,71 +1093,26 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
 	        <button class="btn-primary" onclick="submitLlmPrompt()">Run query</button>
 	      </div>
 	      <div class="hint-box" id="llm-mode-hint">
-	        The assistant routes the prompt to a reviewed SQL template from <code>src/queries</code>. It does not execute arbitrary generated SQL.
+	        The assistant asks GLM to generate one SQLite query, then validates it with static checks, <code>EXPLAIN QUERY PLAN</code>, a read-only connection, and a SQLite authorizer before execution.
 	      </div>
 	      <div id="llm-query-summary" class="review-summary" style="display:none"></div>
-	      <div id="llm-query-sql" class="sql-block" style="display:none;margin-bottom:1rem"></div>
+	      <div id="llm-query-panel" class="sql-panel" style="display:none">
+	        <div class="sql-panel-header">
+	          <div class="sql-panel-meta">
+	            <span class="sql-panel-kicker">Generated SQL</span>
+	            <span class="sql-panel-title">SQLite query preview</span>
+	            <span class="sql-panel-subtitle">Read-only SQL that passed backend validation before execution.</span>
+	          </div>
+	          <div class="sql-panel-actions">
+	            <span class="sql-panel-chip">SQLite</span>
+	            <button type="button" class="sql-copy-btn" onclick="copyGeneratedSql()">Copy SQL</button>
+	          </div>
+	        </div>
+	        <pre id="llm-query-sql" class="sql-block"></pre>
+	      </div>
       <table><thead id="llm-query-head"></thead><tbody id="llm-query-body">
         <tr><td style="color:var(--color-text-secondary)">Try a prompt such as "show available pets" or "analyze volunteer workload".</td></tr>
       </tbody></table>
-    </div>
-  </div>
-
-  <!-- LLM Bonus -->
-  <div id="page-llm" class="page">
-    <div class="page-title" style="display:flex; align-items:center; gap:12px;">LLM + Database Bonus</div>
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-label">Architecture refinements</div><div class="stat-value" id="llm-refinement-count">--</div><div class="stat-sub">LLM-assisted improvements</div></div>
-      <div class="stat-card"><div class="stat-label">Integrity checks</div><div class="stat-value" id="llm-check-count">--</div><div class="stat-sub">schema and data audits</div></div>
-      <div class="stat-card"><div class="stat-label">Open findings</div><div class="stat-value" style="color:#854F0B" id="llm-finding-count">--</div><div class="stat-sub">records to review</div></div>
-      <div class="stat-card"><div class="stat-label">Safe queries</div><div class="stat-value" style="color:#185FA5" id="llm-query-count">--</div><div class="stat-sub">predefined SELECT tools</div></div>
-    </div>
-
-    <div class="bonus-grid">
-      <div class="section-card bonus-wide">
-        <div class="section-header"><span class="section-title">Architecture refinement: original vs LLM-assisted design</span></div>
-        <table><thead><tr><th>Area</th><th>Original design</th><th>Refinement</th><th>Implementation</th><th>Benefit</th></tr></thead><tbody id="llm-refinement-tbody">
-          <tr><td colspan="5" style="color:var(--color-text-secondary)">Loading refinements...</td></tr>
-        </tbody></table>
-      </div>
-
-      <div class="section-card bonus-wide">
-        <div class="section-header"><span class="section-title">Integrity and anomaly audit</span></div>
-        <table><thead><tr><th>Check</th><th>Severity</th><th>Enforcement</th><th>Status</th><th>Findings</th><th>Refinement</th></tr></thead><tbody id="llm-audit-tbody">
-          <tr><td colspan="6" style="color:var(--color-text-secondary)">Loading integrity checks...</td></tr>
-        </tbody></table>
-      </div>
-
-      <div class="section-card">
-        <div class="section-header"><span class="section-title">Refined constraints and indexes</span></div>
-        <table><thead><tr><th>Name</th><th>Suggested SQL</th><th>Reason</th></tr></thead><tbody id="llm-constraint-tbody">
-          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading constraints...</td></tr>
-        </tbody></table>
-      </div>
-
-	      <div class="section-card">
-	        <div class="section-header"><span class="section-title">Prompt engineering patterns</span></div>
-	        <table><thead><tr><th>Pattern</th><th>Prompt</th><th>Matched query</th></tr></thead><tbody id="llm-prompt-tbody">
-	          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading prompt patterns...</td></tr>
-	        </tbody></table>
-	      </div>
-
-	      <div class="section-card bonus-wide">
-	        <div class="section-header"><span class="section-title">Prompt-to-SQL investigation</span></div>
-	        <table style="margin-bottom:1rem"><thead><tr><th>Method</th><th>Purpose</th><th>Best for</th></tr></thead><tbody id="llm-method-tbody">
-	          <tr><td colspan="3" style="color:var(--color-text-secondary)">Loading prompt methods...</td></tr>
-	        </tbody></table>
-	        <table><thead><tr><th>Method</th><th>Total</th><th>JSON valid</th><th>Safe</th><th>Executable</th></tr></thead><tbody id="llm-eval-tbody">
-	          <tr><td colspan="5" style="color:var(--color-text-secondary)">Run src/llm_prompt_eval.py to populate evaluation results.</td></tr>
-	        </tbody></table>
-	      </div>
-
-	      <div class="section-card bonus-wide">
-	        <div class="section-header"><span class="section-title">LLM-safe query catalog</span></div>
-        <table><thead><tr><th>Name</th><th>Category</th><th>Read-only</th><th>Description</th></tr></thead><tbody id="llm-catalog-tbody">
-          <tr><td colspan="4" style="color:var(--color-text-secondary)">Loading query catalog...</td></tr>
-        </tbody></table>
-      </div>
     </div>
   </div>
 
@@ -657,19 +1121,23 @@ textarea.form-control{resize:vertical;min-height:90px;line-height:1.5}
 
 <!-- ── Pet detail modal ── -->
 <div class="overlay" id="pet-detail-overlay">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeOverlay('pet-detail-overlay')">✕</button>
-    <div class="modal-title" id="modal-pet-name"></div>
-    <div id="modal-pet-fields"></div>
+  <div class="modal-box modal-view">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeOverlay('pet-detail-overlay')">✕</button>
+      <div class="modal-title" id="modal-pet-name"></div>
+    </div>
+    <div class="modal-body" id="modal-pet-fields"></div>
   </div>
 </div>
 
 <!-- ── Application detail modal ── -->
 <div class="overlay" id="app-detail-overlay">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeOverlay('app-detail-overlay')">✕</button>
-    <div class="modal-title" id="modal-app-title"></div>
-    <div id="modal-app-fields"></div>
+  <div class="modal-box modal-view">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeOverlay('app-detail-overlay')">✕</button>
+      <div class="modal-title" id="modal-app-title"></div>
+    </div>
+    <div class="modal-body" id="modal-app-fields"></div>
   </div>
 </div>
 
@@ -822,9 +1290,7 @@ let vaccinations = [];
 let volunteers = [];
 let careAssignments = [];
 let analytics = null;
-let llmBonus = null;
 let dashboard = null;
-let llmMode = 'template';
 let reviewingIndex = -1;
 let crudContext = null;
 let selectedActivityTypes = null;
@@ -986,6 +1452,46 @@ function statusBadge(s) {
   return `<span class="badge ${m[s]||''}">${escapeHtml(s)}</span>`;
 }
 
+function statusProgressClass(status) {
+  const key = String(status || '').toLowerCase();
+  if (key.includes('available')) return 'status-progress-available';
+  if (key.includes('reserved') || key.includes('pending')) return 'status-progress-reserved';
+  if (key.includes('adopted') || key.includes('approved')) return 'status-progress-adopted';
+  if (key.includes('hold') || key.includes('rejected')) return 'status-progress-hold';
+  return '';
+}
+
+function clampPercent(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, n));
+}
+
+function speciesKey(species) {
+  const key = String(species || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return key || 'unknown';
+}
+
+function speciesInitial(species) {
+  return String(species || '?').trim().slice(0, 1).toUpperCase() || '?';
+}
+
+function emptyRow(colspan, title='No records found', message='It looks like there is no data to display here at the moment.') {
+  return `<tr><td colspan="${colspan}">
+    <div class="empty-state">
+      <div class="empty-illustration">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 29c5-10 23-10 28 0 3 7-3 13-12 10-2-.7-4-.7-6 0-9 3-15-3-10-10Z"/>
+          <path d="M12 17c1-5 5-8 9-6 3 2 3 7 1 11-2 4-7 5-9 2-1-2-2-4-1-7Z"/>
+          <path d="M27 11c4-2 8 1 9 6s-1 9-5 9-7-4-7-8c0-3 1-6 3-7Z"/>
+        </svg>
+      </div>
+      <div class="empty-state-title">${escapeHtml(title)}</div>
+      <div class="empty-state-message">${escapeHtml(message)}</div>
+    </div>
+  </td></tr>`;
+}
+
 function showToast(msg, type='success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -993,12 +1499,64 @@ function showToast(msg, type='success') {
   setTimeout(() => t.className = 'toast', 2800);
 }
 
+function navItemForPage(id) {
+  return document.querySelector(`.nav-item[data-page="${id}"]`);
+}
+
 function showPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  el.classList.add('active');
+  const page = document.getElementById('page-' + id);
+  if (!page) return;
+  page.classList.add('active', 'page-entering');
+  window.setTimeout(() => page.classList.remove('page-entering'), 460);
+  const nav = el || navItemForPage(id);
+  if (nav) nav.classList.add('active');
 }
+
+function pulseDashboardTarget(id) {
+  const target = document.querySelector(`#page-${id} .section-card`);
+  if (!target) return;
+  target.classList.remove('dashboard-target-glow');
+  void target.offsetWidth;
+  target.classList.add('dashboard-target-glow');
+  window.setTimeout(() => target.classList.remove('dashboard-target-glow'), 1100);
+}
+
+function openDashboardPage(id) {
+  showPage(id);
+  const main = document.querySelector('.main');
+  if (main) main.scrollTo({top: 0, behavior: 'smooth'});
+  window.setTimeout(() => pulseDashboardTarget(id), 120);
+}
+
+function bindDashboardCards() {
+  document.querySelectorAll('.dashboard-nav-card[data-nav-page]').forEach(card => {
+    card.addEventListener('click', () => openDashboardPage(card.dataset.navPage));
+    card.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      openDashboardPage(card.dataset.navPage);
+    });
+  });
+}
+
+function initTableSelection() {
+  document.querySelectorAll('.section-card table').forEach(table => {
+    table.addEventListener('click', event => {
+      const row = event.target.closest('tr');
+      if (!row || row.closest('thead')) return;
+      const tbody = row.parentElement;
+      tbody.querySelectorAll('tr').forEach(tr => tr.classList.remove('selected'));
+      row.classList.add('selected');
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTableSelection();
+  bindDashboardCards();
+});
 
 function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -1012,6 +1570,92 @@ function escapeFormValue(value) {
   const div = document.createElement('div');
   div.textContent = value == null ? '' : String(value);
   return div.innerHTML;
+}
+
+const SQL_KEYWORDS = new Set([
+  'SELECT','FROM','WHERE','WITH','AS','AND','OR','NOT','NULL','IS','IN','ON','JOIN','LEFT','RIGHT','INNER','OUTER',
+  'CROSS','FULL','UNION','ALL','DISTINCT','GROUP','BY','ORDER','HAVING','LIMIT','OFFSET','CASE','WHEN','THEN','ELSE',
+  'END','ASC','DESC','BETWEEN','LIKE','EXISTS','OVER','PARTITION'
+]);
+
+const SQL_FUNCTIONS = new Set([
+  'COUNT','SUM','AVG','MIN','MAX','ROUND','COALESCE','CAST','DATE','DATETIME','STRFTIME','JULIANDAY','IFNULL','ABS'
+]);
+
+let latestGeneratedSql = '';
+
+function wrapSqlToken(token) {
+  const upper = token.toUpperCase();
+  if (token.startsWith('--') || token.startsWith('/*')) {
+    return `<span class="sql-token-comment">${escapeFormValue(token)}</span>`;
+  }
+  if (token.startsWith("'") || token.startsWith('"')) {
+    return `<span class="sql-token-string">${escapeFormValue(token)}</span>`;
+  }
+  if (/^\d+(\.\d+)?$/.test(token)) {
+    return `<span class="sql-token-number">${escapeFormValue(token)}</span>`;
+  }
+  if (/^[(),.*=<>+/\-]+$/.test(token)) {
+    return `<span class="sql-token-operator">${escapeFormValue(token)}</span>`;
+  }
+  if (SQL_FUNCTIONS.has(upper)) {
+    return `<span class="sql-token-function">${escapeFormValue(token)}</span>`;
+  }
+  if (SQL_KEYWORDS.has(upper)) {
+    return `<span class="sql-token-keyword">${escapeFormValue(token)}</span>`;
+  }
+  return escapeFormValue(token);
+}
+
+function highlightSql(sql) {
+  const source = sql == null ? '' : String(sql);
+  const tokenPattern = /(--.*?$|\/\*[\s\S]*?\*\/|'(?:''|[^'])*'|"(?:[^"]|"")*"|\b[A-Za-z_][A-Za-z0-9_]*\b|\b\d+(?:\.\d+)?\b|[(),.*=<>+/\-]+)/gm;
+  let html = '';
+  let lastIndex = 0;
+
+  for (const match of source.matchAll(tokenPattern)) {
+    const token = match[0];
+    html += escapeFormValue(source.slice(lastIndex, match.index));
+    html += wrapSqlToken(token);
+    lastIndex = match.index + token.length;
+  }
+
+  html += escapeFormValue(source.slice(lastIndex));
+  return html;
+}
+
+function renderSqlBlock(sql) {
+  const panel = document.getElementById('llm-query-panel');
+  const sqlBlock = document.getElementById('llm-query-sql');
+  latestGeneratedSql = sql == null ? '' : String(sql);
+  panel.style.display = latestGeneratedSql ? 'block' : 'none';
+  sqlBlock.innerHTML = latestGeneratedSql ? highlightSql(latestGeneratedSql) : '';
+}
+
+async function copyGeneratedSql() {
+  if (!latestGeneratedSql) {
+    showToast('No SQL to copy', 'info');
+    return;
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(latestGeneratedSql);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = latestGeneratedSql;
+      textarea.setAttribute('readonly', 'readonly');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    showToast('SQL copied to clipboard', 'success');
+  } catch (err) {
+    showToast('Copy failed', 'error');
+  }
 }
 
 function entityCode(prefix, value) {
@@ -1060,6 +1704,11 @@ function activityTypeLabel(type) {
     pet_intake: 'Pet intake'
   };
   return labels[type] || String(type || 'Activity').replace(/_/g, ' ');
+}
+
+function activityDotClass(type, fallbackClass) {
+  const normalized = String(type || '').trim().replace(/[^\w-]/g, '_');
+  return normalized ? `activity-dot-${normalized}` : (fallbackClass || 'dot-blue');
 }
 
 function activityTypeEntries(activities) {
@@ -1516,8 +2165,7 @@ async function loadData() {
     vaccinationData,
     volunteerData,
     assignmentData,
-    analyticsData,
-    llmBonusData
+    analyticsData
   ] = await Promise.all([
     apiRequest('/api/dashboard'),
     apiRequest('/api/shelters'),
@@ -1530,8 +2178,7 @@ async function loadData() {
     apiRequest('/api/vaccinations'),
     apiRequest('/api/volunteers'),
     apiRequest('/api/care-assignments'),
-    apiRequest('/api/analytics'),
-    apiRequest('/api/llm-bonus')
+    apiRequest('/api/analytics')
   ]);
 
   dashboard = dashboardData;
@@ -1546,7 +2193,6 @@ async function loadData() {
   volunteers = volunteerData.volunteers || [];
   careAssignments = assignmentData.careAssignments || [];
   analytics = analyticsData;
-  llmBonus = llmBonusData;
 
   populateSpeciesFilter();
   renderDashboard();
@@ -1558,22 +2204,78 @@ async function loadData() {
   renderMedical();
   renderVolunteers();
   renderAnalytics();
-  renderLlmBonus();
 }
 
 function renderDashboard() {
   const stats = dashboard?.stats || {};
-  document.getElementById('dash-total-pets').textContent = stats.totalPets ?? '--';
-  document.getElementById('dash-shelter-count').textContent = `in ${stats.shelterCount ?? 0} shelters`;
-  document.getElementById('dash-available-count').textContent = stats.availablePets ?? '--';
-  document.getElementById('dash-pending-count').textContent = stats.pendingApplications ?? '--';
-  document.getElementById('dash-monthly-adoptions').textContent = stats.monthlyAdoptions ?? '--';
+  const totalPets = Number(stats.totalPets);
+  const availablePets = Number(stats.availablePets);
+  const pendingApplications = Number(stats.pendingApplications);
+  const shelterCount = Number(stats.shelterCount);
+  const monthlyAdoptions = Number(stats.monthlyAdoptions);
+  const activeVolunteers = volunteers.filter(v => String(v.status || '').trim().toLowerCase() === 'active').length;
+  const peakShelter = shelters.reduce((best, current) => {
+    const currentRate = Number(current?.occupancyRate);
+    const bestRate = Number(best?.occupancyRate);
+    if (!Number.isFinite(currentRate)) return best;
+    if (!best || !Number.isFinite(bestRate) || currentRate > bestRate) return current;
+    return best;
+  }, null);
+  const peakOccupancy = peakShelter ? formatPercent(peakShelter.occupancyRate) : '--';
+  const availableShare = Number.isFinite(totalPets) && totalPets > 0 && Number.isFinite(availablePets)
+    ? Math.round((availablePets / totalPets) * 100)
+    : null;
+  const heroPrimaryInsight = Number.isFinite(pendingApplications) && pendingApplications > 0
+    ? `${pendingApplications} adoption ${pendingApplications === 1 ? 'review is' : 'reviews are'} waiting for a decision`
+    : Number.isFinite(availablePets) && availablePets > 0
+      ? `${availablePets} pets are ready for new families`
+      : 'The adoption queue is clear right now';
+  const heroSecondaryParts = [];
+  if (Number.isFinite(shelterCount)) heroSecondaryParts.push(`${shelterCount} shelters live`);
+  if (activeVolunteers) heroSecondaryParts.push(`${activeVolunteers} active volunteers`);
+  if (peakShelter) heroSecondaryParts.push(`${peakShelter.name} leads occupancy at ${peakOccupancy}`);
+  const heroSecondaryInsight = heroSecondaryParts.length
+    ? heroSecondaryParts.join(' / ')
+    : 'Waiting for live shelter data';
+  const volunteerCoverage = careAssignments.length
+    ? `${careAssignments.length} care ${careAssignments.length === 1 ? 'assignment' : 'assignments'} on the board`
+    : 'no care assignments scheduled yet';
+  const monthlyAdoptionSub = Number.isFinite(pendingApplications) && pendingApplications > 0
+    ? `${pendingApplications} applications still in motion`
+    : 'queue ready for the next handoff';
+
+  document.getElementById('dash-total-pets').textContent = Number.isFinite(totalPets) ? totalPets : '--';
+  document.getElementById('dash-shelter-count').textContent = `across ${Number.isFinite(shelterCount) ? shelterCount : 0} shelters`;
+  document.getElementById('dash-peak-occupancy').textContent = peakOccupancy;
+  document.getElementById('dash-peak-occupancy-sub').textContent = peakShelter
+    ? `${peakShelter.name} / ${peakShelter.currentPetCount}/${peakShelter.capacity} pets`
+    : 'no shelter occupancy data';
+  document.getElementById('dash-active-volunteers').textContent = activeVolunteers;
+  document.getElementById('dash-active-volunteers-sub').textContent = volunteerCoverage;
+  document.getElementById('dash-monthly-adoptions').textContent = Number.isFinite(monthlyAdoptions) ? monthlyAdoptions : '--';
+  document.getElementById('dash-monthly-adoptions-sub').textContent = monthlyAdoptionSub;
+  document.getElementById('hero-primary-insight').textContent = heroPrimaryInsight;
+  document.getElementById('hero-secondary-insight').textContent = peakShelter
+    ? `Busiest shelter right now: ${peakShelter.name}.`
+    : heroSecondaryInsight;
+  document.getElementById('hero-available-count').textContent = Number.isFinite(availablePets) ? availablePets : '--';
+  document.getElementById('hero-pending-count').textContent = Number.isFinite(pendingApplications) ? pendingApplications : '--';
+  document.getElementById('hero-shelter-count').textContent = Number.isFinite(shelterCount) ? shelterCount : '--';
+  document.getElementById('hero-available-detail').textContent = availableShare == null
+    ? 'adoption-ready pets'
+    : `${availableShare}% of all pets`;
+  document.getElementById('hero-pending-detail').textContent = Number.isFinite(pendingApplications) && pendingApplications > 0
+    ? 'needs staff review'
+    : 'queue clear';
+  document.getElementById('hero-shelter-detail').textContent = peakShelter
+    ? `peak load ${peakOccupancy}`
+    : 'locations live today';
 
   const statusTb = document.getElementById('status-overview-tbody');
   const statuses = dashboard?.statusOverview || [];
   statusTb.innerHTML = statuses.length ? statuses.map(row => `<tr>
-    <td>${statusBadge(row.status)}</td>
-    <td>${escapeHtml(row.count)}</td>
+    <td><div class="status-cell">${statusBadge(row.status)}<div class="status-progress ${statusProgressClass(row.status)}" aria-hidden="true"><span style="width:${clampPercent(row.share)}%"></span></div></div></td>
+    <td><strong>${escapeHtml(row.count)}</strong></td>
     <td>${escapeHtml(row.share)}%</td>
   </tr>`).join('') : '<tr><td colspan="3" style="color:var(--color-text-secondary)">No status data</td></tr>';
 
@@ -1592,11 +2294,11 @@ function renderDashboard() {
     ...typeEntries.map(entry => `<button class="activity-filter-chip${selectedActivityTypes instanceof Set && selectedActivityTypes.has(entry.type) ? ' active' : ''}" onclick="toggleActivityType('${escapeHtml(entry.type)}')">${escapeHtml(activityTypeLabel(entry.type))} <span class="activity-filter-count">${escapeHtml(entry.count)}</span></button>`)
   ].join('') : '';
   feed.innerHTML = filtered.length ? filtered.map(a => `<div class="activity-item">
-    <div class="activity-dot ${escapeHtml(a.dotClass)}"></div>
+    <div class="activity-dot ${escapeHtml(activityDotClass(a.eventType, a.dotClass))}"></div>
     <div>
       <div class="activity-text">${escapeHtml(a.text)}</div>
       <div class="activity-meta">
-        <span class="activity-type">${escapeHtml(activityTypeLabel(a.eventType || 'activity'))}</span>
+        <span class="activity-type activity-type-${escapeHtml(a.eventType || 'activity')}">${escapeHtml(activityTypeLabel(a.eventType || 'activity'))}</span>
         <div class="activity-time">${escapeHtml(a.time)} · ${escapeHtml(timezone)}</div>
       </div>
     </div>
@@ -1615,7 +2317,7 @@ function renderShelters() {
       <td>${escapeHtml(s.capacity)}</td>
       <td>${escapeHtml(s.currentPetCount)}</td>
       <td>${escapeHtml(s.volunteerCount)}</td>
-      <td>${escapeHtml(formatPercent(s.occupancyRate))}</td>
+      <td><div class="occupancy-cell"><strong>${escapeHtml(formatPercent(s.occupancyRate))}</strong><div class="occupancy-meter" aria-hidden="true"><span style="width:${clampPercent(s.occupancyRate)}%"></span></div></div></td>
       <td>${actionButtons('shelters', s.shelterId)}</td>
     </tr>`
   );
@@ -1703,17 +2405,14 @@ function populateSpeciesFilter() {
 
 function renderPets(data) {
   const tb = document.getElementById('pet-tbody');
-  if (!data.length) { tb.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:3rem 1rem;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; margin-bottom:12px; color:var(--color-primary)">
-          <circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>
-        </svg>
-        <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:4px">No pets</div>
-        <div style="font-size:13px;color:var(--color-text-tertiary)">We couldn\'t find any pets matching your criteria.</div>
-      </td></tr>`; return; }
+  if (!data.length) {
+    tb.innerHTML = emptyRow(8, 'No pets', 'No pets match the current search or filter.');
+    return;
+  }
   tb.innerHTML = data.map(p => `<tr>
     <td style="color:var(--color-text-secondary)">${escapeHtml(p.id)}</td>
-    <td style="font-weight:500">${escapeHtml(p.name)}</td>
-    <td>${escapeHtml(p.species)}</td><td>${escapeHtml(p.breed)}</td><td>${escapeHtml(p.sex)}</td>
+    <td><div class="pet-name-cell"><span class="pet-mini-avatar species-${speciesKey(p.species)}">${escapeHtml(speciesInitial(p.species))}</span><div>${escapeHtml(p.name)}${p.shelter ? `<div class="muted-text">${escapeHtml(p.shelter)}</div>` : ''}</div></div></td>
+    <td><span class="species-chip species-${speciesKey(p.species)}">${escapeHtml(p.species)}</span></td><td>${escapeHtml(p.breed)}</td><td>${escapeHtml(p.sex)}</td>
     <td>${statusBadge(p.status)}</td>
     <td style="color:var(--color-text-secondary)">${escapeHtml(p.intake)}</td>
     <td>${actionButtons('pets', p.petId, true)}</td>
@@ -1730,17 +2429,60 @@ function filterPets() {
   }));
 }
 
+function detailHeader(kicker, title, subtitle, badgeHtml='') {
+  return `<div class="detail-heading">
+    <div>
+      <div class="detail-kicker">${escapeHtml(kicker)}</div>
+      <div class="detail-name">${escapeHtml(title)}</div>
+      ${subtitle ? `<div class="detail-subtitle">${escapeHtml(subtitle)}</div>` : ''}
+    </div>
+    ${badgeHtml ? `<div class="detail-status">${badgeHtml}</div>` : ''}
+  </div>`;
+}
+
+function detailValueHtml(value) {
+  return value == null || value === '' ? '<span class="detail-empty">-</span>' : escapeHtml(value);
+}
+
+function detailField(label, value, options={}) {
+  const classes = ['detail-field'];
+  if (options.wide) classes.push('detail-field-wide');
+  if (options.note) classes.push('detail-note');
+  const content = options.html ? (value || '<span class="detail-empty">-</span>') : detailValueHtml(value);
+  return `<div class="${classes.join(' ')}">
+    <div class="detail-label">${escapeHtml(label)}</div>
+    <div class="detail-value">${content}</div>
+  </div>`;
+}
+
+function detailGrid(fields) {
+  return `<div class="detail-grid">${fields.map(([label, value, options]) => detailField(label, value, options || {})).join('')}</div>`;
+}
+
 function openPetDetail(i) {
   const p = pets[i];
   if (!p) return;
-  document.getElementById('modal-pet-name').textContent = p.name;
-  document.getElementById('modal-pet-fields').innerHTML = [
-    ['ID',p.id],['Species',p.species],['Breed',p.breed],['Sex',p.sex],
-    ['Color',p.color],['Est. birth date',p.birth],['Intake date',p.intake],
-    ['Status',p.status],['Sterilized',p.sterilized],['Special needs',p.special],
-    ['Shelter ID',p.shelterId ? `S-${String(p.shelterId).padStart(3,'0')}` : ''],
-    ['Shelter',p.shelter]
-  ].map(([l,v]) => `<div class="field-row"><span class="field-label">${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`).join('');
+  const shelterCode = p.shelterId ? `S-${String(p.shelterId).padStart(3,'0')}` : '';
+  document.getElementById('modal-pet-name').innerHTML = detailHeader(
+    'Pet profile',
+    p.name,
+    `${p.id} - ${p.species}${p.breed ? ` / ${p.breed}` : ''}`,
+    statusBadge(p.status)
+  );
+  document.getElementById('modal-pet-fields').innerHTML = detailGrid([
+    ['ID', p.id],
+    ['Species', p.species],
+    ['Breed', p.breed],
+    ['Sex', p.sex],
+    ['Color', p.color],
+    ['Est. birth date', p.birth],
+    ['Intake date', p.intake],
+    ['Status', statusBadge(p.status), {html:true}],
+    ['Sterilized', statusBadge(p.sterilized), {html:true}],
+    ['Shelter ID', shelterCode],
+    ['Shelter', p.shelter, {wide:true}],
+    ['Special needs', p.special, {wide:true, note:true}]
+  ]);
   document.getElementById('pet-detail-overlay').classList.add('open');
 }
 
@@ -1750,13 +2492,10 @@ function openPetDetailById(id) {
 
 function renderApps(data) {
   const tb = document.getElementById('app-tbody');
-  if (!data.length) { tb.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:3rem 1rem;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; margin-bottom:12px; color:var(--color-primary)">
-          <circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>
-        </svg>
-        <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:4px">No applications</div>
-        <div style="font-size:13px;color:var(--color-text-tertiary)">We couldn\'t find any applications matching your criteria.</div>
-      </td></tr>`; return; }
+  if (!data.length) {
+    tb.innerHTML = emptyRow(6, 'No applications', 'No applications match the current search or filter.');
+    return;
+  }
   tb.innerHTML = data.map(a => {
     const gi = apps.indexOf(a);
     const approvalLocked = a.rawStatus === 'Under Review' && approvedApplicationsForPet(a.petId, a.applicationId).length > 0;
@@ -1788,16 +2527,31 @@ function filterApps() {
 function openAppDetail(i) {
   const a = apps[i];
   if (!a) return;
-  document.getElementById('modal-app-title').textContent = `${a.id} - ${a.applicant}`;
-  document.getElementById('modal-app-fields').innerHTML = [
-    ['Applicant ID',entityCode('A', a.applicantId)],['Pet ID',entityCode('P', a.petId)],
-    ['Applicant phone',a.applicantPhone],['Applicant email',a.applicantEmail],
-    ['Applicant address',a.applicantAddress],['Pet experience',a.hasPetExperience ? 'Yes' : 'No'],
-    ['Pet',a.pet],['Application date',a.date],['Status',a.status],
-    ['Housing type',a.housingType],['Applicant created at',a.applicantCreatedAt],
-    ['Reason',a.reason],['Reviewer',a.reviewer],
-    ['Reviewed date',a.reviewedDate],['Decision note',a.decision]
-  ].map(([l,v]) => `<div class="field-row"><span class="field-label">${escapeHtml(l)}</span><span style="max-width:60%;text-align:right">${escapeHtml(v)}</span></div>`).join('');
+  const applicantCode = entityCode('A', a.applicantId);
+  const petCode = entityCode('P', a.petId);
+  document.getElementById('modal-app-title').innerHTML = detailHeader(
+    'Application',
+    `${a.id} - ${a.applicant}`,
+    `${applicantCode} to ${petCode} - ${a.pet}`,
+    statusBadge(a.status)
+  );
+  document.getElementById('modal-app-fields').innerHTML = detailGrid([
+    ['Applicant ID', applicantCode],
+    ['Pet ID', petCode],
+    ['Pet', a.pet],
+    ['Application date', a.date],
+    ['Status', statusBadge(a.status), {html:true}],
+    ['Pet experience', statusBadge(a.hasPetExperience ? 'Yes' : 'No'), {html:true}],
+    ['Applicant phone', a.applicantPhone],
+    ['Applicant email', a.applicantEmail],
+    ['Housing type', a.housingType],
+    ['Applicant created at', a.applicantCreatedAt],
+    ['Reviewer', a.reviewer],
+    ['Reviewed date', a.reviewedDate],
+    ['Applicant address', a.applicantAddress, {wide:true, note:true}],
+    ['Reason', a.reason, {wide:true, note:true}],
+    ['Decision note', a.decision, {wide:true, note:true}]
+  ]);
   document.getElementById('app-detail-overlay').classList.add('open');
 }
 
@@ -1959,13 +2713,7 @@ function renderMedical() {
     <td>${escapeHtml(r.vet)}</td>
     <td class="note-cell">${escapeHtml(r.notes)}</td>
     <td>${actionButtons('medical-records', r.recordId)}</td>
-  </tr>`).join('') : `<tr><td colspan="9" style="text-align:center;padding:3rem 1rem;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; margin-bottom:12px; color:var(--color-primary)">
-          <circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>
-        </svg>
-        <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:4px">No medical records</div>
-        <div style="font-size:13px;color:var(--color-text-tertiary)">We couldn\'t find any medical records matching your criteria.</div>
-      </td></tr>`;
+  </tr>`).join('') : emptyRow(9, 'No medical records', 'No medical records match the current view.');
 
   const vaccTb = document.getElementById('vaccination-tbody');
   vaccTb.innerHTML = vaccinations.length ? vaccinations.map(v => `<tr>
@@ -1978,13 +2726,7 @@ function renderMedical() {
     <td>${escapeHtml(v.vet)}</td>
     <td class="note-cell">${escapeHtml(v.notes)}</td>
     <td>${actionButtons('vaccinations', v.vaccinationId)}</td>
-  </tr>`).join('') : `<tr><td colspan="9" style="text-align:center;padding:3rem 1rem;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; margin-bottom:12px; color:var(--color-primary)">
-          <circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>
-        </svg>
-        <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:4px">No vaccinations</div>
-        <div style="font-size:13px;color:var(--color-text-tertiary)">We couldn\'t find any vaccinations matching your criteria.</div>
-      </td></tr>`;
+  </tr>`).join('') : emptyRow(9, 'No vaccinations', 'No vaccination records match the current view.');
 }
 
 function dueDateStyle(dateText) {
@@ -2011,13 +2753,7 @@ function renderVolunteers() {
     <td>${statusBadge(v.status)}</td>
     <td>${escapeHtml(v.assignedPets)}</td>
     <td>${actionButtons('volunteers', v.volunteerId)}</td>
-  </tr>`).join('') : `<tr><td colspan="10" style="text-align:center;padding:3rem 1rem;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; margin-bottom:12px; color:var(--color-primary)">
-          <circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>
-        </svg>
-        <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:4px">No volunteers</div>
-        <div style="font-size:13px;color:var(--color-text-tertiary)">We couldn\'t find any volunteers matching your criteria.</div>
-      </td></tr>`;
+  </tr>`).join('') : emptyRow(10, 'No volunteers', 'No volunteer records match the current view.');
 
   const careTb = document.getElementById('care-tbody');
   careTb.innerHTML = careAssignments.length ? careAssignments.map(c => `<tr>
@@ -2030,13 +2766,7 @@ function renderVolunteers() {
     <td>${statusBadge(c.status)}</td>
     <td class="note-cell">${escapeHtml(c.notes)}</td>
     <td>${actionButtons('care-assignments', c.assignmentId)}</td>
-  </tr>`).join('') : `<tr><td colspan="9" style="text-align:center;padding:3rem 1rem;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; margin-bottom:12px; color:var(--color-primary)">
-          <circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>
-        </svg>
-        <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:4px">No care assignments</div>
-        <div style="font-size:13px;color:var(--color-text-tertiary)">We couldn\'t find any care assignments matching your criteria.</div>
-      </td></tr>`;
+  </tr>`).join('') : emptyRow(9, 'No care assignments', 'No care assignments match the current view.');
 }
 
 function renderAnalytics() {
@@ -2111,19 +2841,38 @@ function renderAnalytics() {
   if (window.Chart && data) {
     if (window.occupancyChart) window.occupancyChart.destroy();
     if (window.speciesChart) window.speciesChart.destroy();
+    const css = getComputedStyle(document.documentElement);
+    const chartText = css.getPropertyValue('--color-text-secondary').trim();
+    const chartGrid = css.getPropertyValue('--color-border-tertiary').trim();
 
     const occCtx = document.getElementById("chart-occupancy");
     if (occCtx && data.occupancy) {
+      const occCanvas = occCtx.getContext("2d");
+      const currentPetsGradient = occCanvas.createLinearGradient(0, 0, 0, 220);
+      currentPetsGradient.addColorStop(0, "#f76707");
+      currentPetsGradient.addColorStop(1, "#ffd8a8");
+      const capacityGradient = occCanvas.createLinearGradient(0, 0, 0, 220);
+      capacityGradient.addColorStop(0, "#0ca678");
+      capacityGradient.addColorStop(1, "#c3fae8");
       window.occupancyChart = new Chart(occCtx, {
         type: "bar",
         data: {
           labels: data.occupancy.map(o => o.shelter),
           datasets: [
-            { label: "Current Pets", data: data.occupancy.map(o => o.currentPetCount), backgroundColor: "#f76707", borderRadius: 4 },
-            { label: "Capacity", data: data.occupancy.map(o => o.capacity), backgroundColor: "#e2e8f0", borderRadius: 4 }
+            { label: "Current Pets", data: data.occupancy.map(o => o.currentPetCount), backgroundColor: currentPetsGradient, borderRadius: 8, borderSkipped: false },
+            { label: "Capacity", data: data.occupancy.map(o => o.capacity), backgroundColor: capacityGradient, borderRadius: 8, borderSkipped: false }
           ]
         },
-        options: { maintainAspectRatio: false, responsive: true, plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: true } } }
+        options: {
+          maintainAspectRatio: false,
+          responsive: true,
+          animation: {duration: 900, easing: "easeOutQuart"},
+          plugins: {legend: {position: "bottom", labels: {color: chartText, usePointStyle: true, pointStyle: "circle", boxWidth: 7, padding: 16}}},
+          scales: {
+            x: {grid: {display: false}, ticks: {color: chartText}},
+            y: {beginAtZero: true, grid: {color: chartGrid}, ticks: {color: chartText, precision: 0}}
+          }
+        }
       });
     }
 
@@ -2135,11 +2884,19 @@ function renderAnalytics() {
           labels: data.speciesDemand.map(s => s.species),
           datasets: [{
             data: data.speciesDemand.map(s => s.totalApplications),
-            backgroundColor: ["#f76707", "#1c7ed6", "#2b8a3e", "#fab005", "#7950f2"],
-            borderWidth: 0
+            backgroundColor: ["#f76707", "#1c7ed6", "#0ca678", "#fab005", "#7048e8"],
+            borderColor: css.getPropertyValue('--color-background-primary').trim(),
+            borderWidth: 4,
+            hoverOffset: 8
           }]
         },
-        options: { maintainAspectRatio: false, responsive: true, plugins: { legend: { position: "right" } }, cutout: "65%" }
+        options: {
+          maintainAspectRatio: false,
+          responsive: true,
+          animation: {animateRotate: true, duration: 900, easing: "easeOutQuart"},
+          plugins: {legend: {position: "right", labels: {color: chartText, usePointStyle: true, pointStyle: "circle", boxWidth: 7, padding: 16}}},
+          cutout: "68%"
+        }
       });
     }
   }
@@ -2151,15 +2908,7 @@ function renderAnalytics() {
 function renderTableRows(rows, colspan, renderRow) {
   return rows?.length
     ? rows.map(renderRow).join('')
-    : `<tr><td colspan="${colspan}" style="text-align:center;padding:3rem 1rem;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; margin-bottom:12px; color:var(--color-primary)">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-          <line x1="12" y1="22.08" x2="12" y2="12"></line>
-        </svg>
-        <div style="font-size:15px;font-weight:600;color:var(--color-text-secondary);margin-bottom:4px">No records found</div>
-        <div style="font-size:13px;color:var(--color-text-tertiary)">It looks like there is no data to display here at the moment.</div>
-      </td></tr>`;
+    : emptyRow(colspan);
 }
 
 function formatPercent(value) {
@@ -2175,108 +2924,6 @@ function formatMoney(value) {
   return `$${n.toFixed(2)}`;
 }
 
-function renderLlmBonus() {
-  const data = llmBonus || {};
-  const summary = data.summary || {};
-  document.getElementById('llm-refinement-count').textContent = summary.architectureRefinementCount ?? '--';
-  document.getElementById('llm-check-count').textContent = summary.integrityCheckCount ?? '--';
-  document.getElementById('llm-finding-count').textContent = summary.openFindingCount ?? '--';
-  document.getElementById('llm-query-count').textContent = summary.safeReadOnlyQueryCount ?? '--';
-
-  document.getElementById('llm-refinement-tbody').innerHTML = renderTableRows(
-    data.architectureRefinements,
-    5,
-    row => `<tr>
-      <td style="font-weight:500">${escapeHtml(row.area)}</td>
-      <td>${escapeHtml(row.originalDesign)}</td>
-      <td>${escapeHtml(row.llmRefinement)}</td>
-      <td>${escapeHtml(row.implementation)}</td>
-      <td>${escapeHtml(row.benefit)}</td>
-    </tr>`
-  );
-
-  document.getElementById('llm-audit-tbody').innerHTML = renderTableRows(
-    data.integrityAudit,
-    6,
-    row => `<tr>
-      <td><div style="font-weight:500">${escapeHtml(row.title)}</div><div class="muted-text">${escapeHtml(row.llmRationale)}</div></td>
-      <td>${escapeHtml(row.severity)}</td>
-      <td><code>${escapeHtml(row.enforcementLayer)}</code></td>
-      <td>${statusBadge(row.status)}</td>
-      <td>${escapeHtml(row.findingCount)}</td>
-      <td>${escapeHtml(row.refinement)}</td>
-    </tr>`
-  );
-
-  document.getElementById('llm-constraint-tbody').innerHTML = renderTableRows(
-    data.refinedConstraints,
-    3,
-    row => `<tr>
-      <td style="font-weight:500">${escapeHtml(row.name)}</td>
-      <td><code>${escapeHtml(row.sql)}</code></td>
-      <td>${escapeHtml(row.reason)}</td>
-    </tr>`
-  );
-
-	  document.getElementById('llm-prompt-tbody').innerHTML = renderTableRows(
-	    data.promptPatterns,
-	    3,
-	    row => `<tr>
-	      <td style="font-weight:500">${escapeHtml(row.pattern)}</td>
-	      <td>${escapeHtml(row.prompt)}<div class="muted-text">${escapeHtml(row.routingLogic)}</div></td>
-	      <td><code>${escapeHtml(row.expectedQuery)}</code></td>
-	    </tr>`
-	  );
-
-	  document.getElementById('llm-method-tbody').innerHTML = renderTableRows(
-	    data.promptEngineeringMethods,
-	    3,
-	    row => `<tr>
-	      <td><code>${escapeHtml(row.method)}</code></td>
-	      <td>${escapeHtml(row.purpose)}</td>
-	      <td>${escapeHtml(row.bestFor)}</td>
-	    </tr>`
-	  );
-
-	  const evalMethods = data.promptEvaluation?.methods || [];
-	  document.getElementById('llm-eval-tbody').innerHTML = renderTableRows(
-	    evalMethods,
-	    5,
-	    row => `<tr>
-	      <td><code>${escapeHtml(row.method)}</code></td>
-	      <td>${escapeHtml(row.total)}</td>
-	      <td>${escapeHtml(row.jsonValid)}</td>
-	      <td>${escapeHtml(row.safe)}</td>
-	      <td>${escapeHtml(row.executable)}</td>
-	    </tr>`
-	  );
-
-	  document.getElementById('llm-catalog-tbody').innerHTML = renderTableRows(
-    data.queryCatalog,
-    4,
-    row => `<tr>
-      <td><code>${escapeHtml(row.name)}</code></td>
-      <td>${escapeHtml(row.category)}</td>
-      <td>${statusBadge(row.readOnly ? 'Yes' : 'No')}</td>
-      <td>${escapeHtml(row.description)}</td>
-    </tr>`
-  );
-
-
-}
-
-
-function setLlmMode(mode) {
-  llmMode = mode;
-  document.getElementById('llm-mode-template').classList.toggle('active', mode === 'template');
-  document.getElementById('llm-mode-generated').classList.toggle('active', mode === 'generated');
-  document.getElementById('llm-method-label').style.display = mode === 'generated' ? '' : 'none';
-  document.getElementById('llm-method-select').style.display = mode === 'generated' ? '' : 'none';
-  document.getElementById('llm-mode-hint').innerHTML = mode === 'generated'
-    ? 'The assistant asks GLM to generate one SQLite query, then validates it with static checks, <code>EXPLAIN QUERY PLAN</code>, a read-only connection, and a SQLite authorizer before execution.'
-    : 'The assistant routes the prompt to a reviewed SQL template from <code>src/queries</code>. It does not execute arbitrary generated SQL.';
-}
-
 async function submitLlmPrompt() {
   const input = document.getElementById('llm-prompt-input');
   const prompt = input.value.trim();
@@ -2285,13 +2932,11 @@ async function submitLlmPrompt() {
     return;
   }
   try {
-    const endpoint = llmMode === 'generated' ? '/api/llm-generate-query' : '/api/llm-query';
-    const body = llmMode === 'generated'
-      ? {prompt, promptMethod: document.getElementById('llm-method-select').value, execute: true}
-      : {prompt};
+    const body = {prompt, promptMethod: document.getElementById('llm-method-select').value, execute: true};
+    const endpoint = '/api/llm-generate-query';
     const result = await apiRequest(endpoint, {method: 'POST', body});
     renderLlmQueryResult(result);
-    showToast(llmMode === 'generated' ? 'Generated safe SQL' : `Matched ${result.matchedQuery.name}`, 'success');
+    showToast('Generated safe SQL', 'success');
   } catch (err) {
     renderLlmQueryError(err);
     showToast(err.message, 'error');
@@ -2299,18 +2944,7 @@ async function submitLlmPrompt() {
 }
 
 function renderLlmQueryResult(result) {
-  if (result.matchedQuery) {
-    renderReviewedQueryResult(result);
-    return;
-  }
   renderGeneratedQueryResult(result);
-}
-
-function renderReviewedQueryResult(result) {
-  const summary = document.getElementById('llm-query-summary');
-  summary.style.display = 'block';
-  summary.innerHTML = `<strong>${escapeHtml(result.matchedQuery.title)}</strong><br><span class="muted-text">${escapeHtml(result.safetyModel)} Category: ${escapeHtml(result.matchedQuery.category)}. Read-only: ${escapeHtml(result.matchedQuery.readOnly ? 'Yes' : 'No')}. Returned ${escapeHtml(result.rowCount)} rows.</span>`;
-  renderSqlAndRows(result.matchedQuery.sql, result.rows || []);
 }
 
 function renderGeneratedQueryResult(result) {
@@ -2322,9 +2956,7 @@ function renderGeneratedQueryResult(result) {
 }
 
 function renderSqlAndRows(sql, rows) {
-  const sqlBlock = document.getElementById('llm-query-sql');
-  sqlBlock.style.display = 'block';
-  sqlBlock.textContent = sql || '';
+  renderSqlBlock(sql);
 
   const head = document.getElementById('llm-query-head');
   const body = document.getElementById('llm-query-body');
@@ -2344,10 +2976,18 @@ function renderLlmQueryError(err) {
   summary.style.display = 'block';
   const validation = payload.validation;
   const validationText = validation ? ` ${statusBadge(validation.safe ? 'Safe' : 'Unsafe')} <span class="muted-text">${escapeHtml(validation.reason || '')}</span>` : '';
-  summary.innerHTML = `<strong>Assistant error</strong>${validationText}<br><span class="muted-text">${escapeHtml(err.message)}</span>`;
-  const sqlBlock = document.getElementById('llm-query-sql');
-  sqlBlock.style.display = payload.generatedSql ? 'block' : 'none';
-  sqlBlock.textContent = payload.generatedSql || '';
+  const guidanceParts = [];
+  if (payload.suggestedInterpretation) {
+    guidanceParts.push(`<div class="muted-text"><strong>Suggested interpretation:</strong> ${escapeHtml(payload.suggestedInterpretation)}</div>`);
+  }
+  if (payload.suggestedPrompt) {
+    guidanceParts.push(`<div class="muted-text"><strong>Try asking:</strong> ${escapeHtml(payload.suggestedPrompt)}</div>`);
+  }
+  if (payload.suggestedSqlTemplate) {
+    guidanceParts.push(`<div class="muted-text"><strong>Suggested SQL direction:</strong><br><code>${escapeHtml(payload.suggestedSqlTemplate)}</code></div>`);
+  }
+  summary.innerHTML = `<strong>Assistant error</strong>${validationText}<br><span class="muted-text">${escapeHtml(err.message)}</span>${guidanceParts.join('')}`;
+  renderSqlBlock(payload.generatedSql || '');
   document.getElementById('llm-query-head').innerHTML = '';
   document.getElementById('llm-query-body').innerHTML = '<tr><td style="text-align:center;padding:2rem;color:var(--color-text-secondary)">No executable result</td></tr>';
 }
@@ -2364,6 +3004,14 @@ function initials(name) {
 function renderLoadError(message) {
   document.getElementById('dash-total-pets').textContent = '--';
   document.getElementById('dash-shelter-count').textContent = 'backend unavailable';
+  document.getElementById('hero-primary-insight').textContent = 'Backend unavailable';
+  document.getElementById('hero-secondary-insight').textContent = 'Start the API server to restore live shelter data.';
+  document.getElementById('hero-available-count').textContent = '--';
+  document.getElementById('hero-pending-count').textContent = '--';
+  document.getElementById('hero-shelter-count').textContent = '--';
+  document.getElementById('hero-available-detail').textContent = 'adoption-ready pets';
+  document.getElementById('hero-pending-detail').textContent = 'applications waiting for staff';
+  document.getElementById('hero-shelter-detail').textContent = 'locations live today';
   document.getElementById('activity-feed').innerHTML = `<div class="activity-item"><div class="activity-dot dot-amber"></div><div><div class="activity-text">${escapeHtml(message)}</div><div class="activity-time">Start the API server</div></div></div>`;
   document.getElementById('shelter-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
   document.getElementById('pet-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
@@ -2378,10 +3026,6 @@ function renderLoadError(message) {
   ['analytics-occupancy-tbody','analytics-housing-tbody','analytics-species-tbody','analytics-followup-tbody','analytics-longstay-tbody','analytics-workload-tbody'].forEach(id => {
     const tb = document.getElementById(id);
     if (tb) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
-  });
-	  ['llm-refinement-tbody','llm-audit-tbody','llm-constraint-tbody','llm-prompt-tbody','llm-method-tbody','llm-eval-tbody','llm-catalog-tbody'].forEach(id => {
-    const tb = document.getElementById(id);
-    if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-secondary)">Backend API is not connected</td></tr>';
   });
 }
 

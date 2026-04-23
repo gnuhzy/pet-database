@@ -4,6 +4,8 @@ import json
 import os
 import re
 import sqlite3
+import threading
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -11,12 +13,14 @@ from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import quote
 
-from query_registry import StoredQuery, load_query_registry
-
-
 DEFAULT_MODEL = "glm-5.1"
 DEFAULT_BASE_URL = "https://open.bigmodel.cn/api/paas/v4/"
 DEFAULT_TIMEOUT_SECONDS = 30
+DEFAULT_GLM_MAX_CONCURRENT_REQUESTS = 1
+DEFAULT_GLM_MIN_REQUEST_INTERVAL_SECONDS = 1.0
+DEFAULT_GLM_RATE_LIMIT_RETRIES = 4
+DEFAULT_GLM_RATE_LIMIT_BACKOFF_SECONDS = 2.0
+MAX_GLM_RATE_LIMIT_SLEEP_SECONDS = 30.0
 MAX_RESULT_ROWS = 50
 PROMPT_METHODS = ("zero_shot", "schema_grounded", "few_shot", "self_check_repair")
 CASES_PATH = Path(__file__).resolve().parent / "llm_prompt_cases.json"
@@ -59,6 +63,10 @@ class LlmConfig:
     model: str = DEFAULT_MODEL
     base_url: str = DEFAULT_BASE_URL
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS
+    max_concurrent_requests: int = DEFAULT_GLM_MAX_CONCURRENT_REQUESTS
+    min_request_interval_seconds: float = DEFAULT_GLM_MIN_REQUEST_INTERVAL_SECONDS
+    rate_limit_retries: int = DEFAULT_GLM_RATE_LIMIT_RETRIES
+    rate_limit_backoff_seconds: float = DEFAULT_GLM_RATE_LIMIT_BACKOFF_SECONDS
 
     @classmethod
     def from_env(cls) -> "LlmConfig":
@@ -67,16 +75,41 @@ class LlmConfig:
         def config_value(name: str, default: str | None = None) -> str | None:
             return os.getenv(name) or local_env.get(name) or default
 
-        timeout_raw = config_value("LLM_SQL_TIMEOUT_SECONDS", str(DEFAULT_TIMEOUT_SECONDS))
-        try:
-            timeout_seconds = max(1, int(timeout_raw or DEFAULT_TIMEOUT_SECONDS))
-        except ValueError:
-            timeout_seconds = DEFAULT_TIMEOUT_SECONDS
+        def int_config(name: str, default: int, minimum: int) -> int:
+            raw = config_value(name, str(default))
+            try:
+                return max(minimum, int(raw or default))
+            except ValueError:
+                return default
+
+        def float_config(name: str, default: float, minimum: float) -> float:
+            raw = config_value(name, str(default))
+            try:
+                return max(minimum, float(raw or default))
+            except ValueError:
+                return default
+
         return cls(
             api_key=config_value("ZAI_API_KEY") or config_value("GLM_API_KEY"),
             model=config_value("GLM_MODEL", DEFAULT_MODEL) or DEFAULT_MODEL,
             base_url=config_value("GLM_BASE_URL", DEFAULT_BASE_URL) or DEFAULT_BASE_URL,
-            timeout_seconds=timeout_seconds,
+            timeout_seconds=int_config("LLM_SQL_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS, 1),
+            max_concurrent_requests=int_config(
+                "GLM_MAX_CONCURRENT_REQUESTS",
+                DEFAULT_GLM_MAX_CONCURRENT_REQUESTS,
+                1,
+            ),
+            min_request_interval_seconds=float_config(
+                "GLM_MIN_REQUEST_INTERVAL_SECONDS",
+                DEFAULT_GLM_MIN_REQUEST_INTERVAL_SECONDS,
+                0.0,
+            ),
+            rate_limit_retries=int_config("GLM_RATE_LIMIT_RETRIES", DEFAULT_GLM_RATE_LIMIT_RETRIES, 0),
+            rate_limit_backoff_seconds=float_config(
+                "GLM_RATE_LIMIT_BACKOFF_SECONDS",
+                DEFAULT_GLM_RATE_LIMIT_BACKOFF_SECONDS,
+                0.0,
+            ),
         )
 
 
@@ -95,6 +128,97 @@ def read_local_env(path: Path | None = None) -> dict[str, str]:
         if key:
             values[key] = value
     return values
+
+
+_GLM_CONCURRENCY_CONDITION = threading.Condition()
+_GLM_ACTIVE_REQUESTS = 0
+_GLM_REQUEST_SPACING_LOCK = threading.Lock()
+_GLM_NEXT_REQUEST_AT = 0.0
+
+
+class _GlmRequestSlot:
+    def __init__(self, max_concurrent_requests: int):
+        self.max_concurrent_requests = max(1, max_concurrent_requests)
+        self.acquired = False
+
+    def __enter__(self) -> "_GlmRequestSlot":
+        global _GLM_ACTIVE_REQUESTS
+        with _GLM_CONCURRENCY_CONDITION:
+            while _GLM_ACTIVE_REQUESTS >= self.max_concurrent_requests:
+                _GLM_CONCURRENCY_CONDITION.wait()
+            _GLM_ACTIVE_REQUESTS += 1
+            self.acquired = True
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, traceback: object) -> None:
+        global _GLM_ACTIVE_REQUESTS
+        if not self.acquired:
+            return
+        with _GLM_CONCURRENCY_CONDITION:
+            _GLM_ACTIVE_REQUESTS = max(0, _GLM_ACTIVE_REQUESTS - 1)
+            self.acquired = False
+            _GLM_CONCURRENCY_CONDITION.notify_all()
+
+
+def _wait_for_glm_request_window(min_interval_seconds: float) -> None:
+    global _GLM_NEXT_REQUEST_AT
+    if min_interval_seconds <= 0:
+        return
+    with _GLM_REQUEST_SPACING_LOCK:
+        now = time.monotonic()
+        scheduled_at = max(now, _GLM_NEXT_REQUEST_AT)
+        _GLM_NEXT_REQUEST_AT = scheduled_at + min_interval_seconds
+    sleep_seconds = scheduled_at - now
+    if sleep_seconds > 0:
+        time.sleep(sleep_seconds)
+
+
+def _glm_error_status_code(exc: Exception) -> int | None:
+    status_code = getattr(exc, "status_code", None)
+    if status_code is None:
+        response = getattr(exc, "response", None)
+        status_code = getattr(response, "status_code", None)
+    try:
+        return int(status_code) if status_code is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _is_glm_rate_limit_error(exc: Exception) -> bool:
+    status_code = _glm_error_status_code(exc)
+    message = str(exc).lower()
+    return (
+        status_code == 429
+        or "error code: 429" in message
+        or "too many requests" in message
+        or "rate limit" in message
+        or "速率限制" in message
+        or "1302" in message
+    )
+
+
+def _retry_after_seconds(exc: Exception) -> float | None:
+    response = getattr(exc, "response", None)
+    headers = getattr(response, "headers", None)
+    if not headers or not hasattr(headers, "get"):
+        return None
+    retry_after = headers.get("retry-after") or headers.get("Retry-After")
+    if retry_after is None:
+        return None
+    try:
+        return max(0.0, float(retry_after))
+    except (TypeError, ValueError):
+        return None
+
+
+def _glm_rate_limit_sleep_seconds(config: LlmConfig, exc: Exception, retry_index: int) -> float:
+    retry_after = _retry_after_seconds(exc)
+    if retry_after is not None:
+        return min(retry_after, MAX_GLM_RATE_LIMIT_SLEEP_SECONDS)
+    return min(
+        config.rate_limit_backoff_seconds * (2**retry_index),
+        MAX_GLM_RATE_LIMIT_SLEEP_SECONDS,
+    )
 
 
 class GlmChatClient:
@@ -119,22 +243,46 @@ class GlmChatClient:
             api_key=self.config.api_key,
             base_url=self.config.base_url,
             timeout=self.config.timeout_seconds,
-            max_retries=1,
+            max_retries=0,
         )
-        try:
-            response = client.chat.completions.create(
-                model=self.config.model,
-                messages=messages,
-                temperature=0.2,
-                max_tokens=1200,
-                response_format=response_format or {"type": "json_object"},
-            )
-        except TimeoutError as exc:
-            raise LlmSqlError(HTTPStatus.GATEWAY_TIMEOUT, "GLM request timed out.") from exc
-        except Exception as exc:
-            message = str(exc)
-            status = HTTPStatus.GATEWAY_TIMEOUT if "timeout" in message.lower() else HTTPStatus.BAD_GATEWAY
-            raise LlmSqlError(status, f"GLM request failed: {message}") from exc
+        attempt = 0
+        with _GlmRequestSlot(self.config.max_concurrent_requests):
+            while True:
+                _wait_for_glm_request_window(self.config.min_request_interval_seconds)
+                try:
+                    response = client.chat.completions.create(
+                        model=self.config.model,
+                        messages=messages,
+                        temperature=0.2,
+                        max_tokens=1200,
+                        response_format=response_format or {"type": "json_object"},
+                    )
+                    break
+                except TimeoutError as exc:
+                    raise LlmSqlError(HTTPStatus.GATEWAY_TIMEOUT, "GLM request timed out.") from exc
+                except Exception as exc:
+                    message = str(exc)
+                    if _is_glm_rate_limit_error(exc):
+                        if attempt < self.config.rate_limit_retries:
+                            time.sleep(_glm_rate_limit_sleep_seconds(self.config, exc, attempt))
+                            attempt += 1
+                            continue
+                        raise LlmSqlError(
+                            HTTPStatus.TOO_MANY_REQUESTS,
+                            (
+                                f"GLM account rate limit reached after {attempt + 1} attempt(s). "
+                                "Reduce request frequency or increase the provider quota. "
+                                f"Last error: {message}"
+                            ),
+                            {
+                                "rateLimited": True,
+                                "providerStatus": _glm_error_status_code(exc),
+                                "maxConcurrentRequests": self.config.max_concurrent_requests,
+                                "rateLimitRetries": self.config.rate_limit_retries,
+                            },
+                        ) from exc
+                    status = HTTPStatus.GATEWAY_TIMEOUT if "timeout" in message.lower() else HTTPStatus.BAD_GATEWAY
+                    raise LlmSqlError(status, f"GLM request failed: {message}") from exc
 
         content = response.choices[0].message.content
         if not content:
@@ -192,6 +340,8 @@ def build_schema_context(conn: sqlite3.Connection) -> str:
     if domain_lines:
         lines.append("\nKnown business domains:")
         lines.extend(domain_lines)
+    lines.append("\nBusiness term mapping (use these semantics when interpreting questions):")
+    lines.extend(build_business_term_mapping())
     lines.append(
         "\nImportant rule: generate SQLite SQL only. Use date('now', '+8 hours') for current local date logic."
     )
@@ -235,6 +385,14 @@ def build_domain_context(conn: sqlite3.Connection) -> list[str]:
     return lines
 
 
+def build_business_term_mapping() -> list[str]:
+    return [
+        "- 'available for adoption' / 'adoptable': PET.status = 'available'.",
+        "- 'in adoption' / 'in adoption process': use ADOPTION_APPLICATION workflow statuses (typically Under Review/Approved), not only PET.status.",
+        "- 'already adopted': use ADOPTION_RECORD (or PET.status = 'adopted' when explicitly asking pet status).",
+    ]
+
+
 def build_prompt_messages(prompt: str, prompt_method: str, schema_context: str) -> list[dict[str, str]]:
     if prompt_method not in PROMPT_METHODS:
         raise LlmSqlError(
@@ -245,7 +403,8 @@ def build_prompt_messages(prompt: str, prompt_method: str, schema_context: str) 
     output_contract = (
         "Return only a JSON object with keys sql, explanation, tables_used, assumptions, confidence, prompt_method. "
         "The sql value must be a single SQLite SELECT query or a read-only WITH query. "
-        "Never use INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, REPLACE, TRUNCATE, ATTACH, DETACH, PRAGMA, VACUUM, or REINDEX."
+        "Never use INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, REPLACE, TRUNCATE, ATTACH, DETACH, PRAGMA, VACUUM, or REINDEX. "
+        "Do not treat 'in adoption process' as equivalent to PET.status = 'available'."
     )
     system = (
         "You convert pet adoption center questions into safe SQLite information-retrieval SQL. "
@@ -298,11 +457,128 @@ def build_repair_messages(prompt: str, prompt_method: str, schema_context: str, 
     ]
 
 
-def build_few_shot_examples(limit: int = 4) -> str:
-    examples: list[str] = ["Representative reviewed SQL examples:"]
-    for query in load_query_registry()[:limit]:
-        examples.append(f"\nQuestion intent: {query.description}\nSQL:\n{query.sql}")
-    return "\n".join(examples)
+def build_few_shot_examples() -> str:
+    return """Representative safe SQLite examples:
+
+Question intent: list currently available pets with shelter names.
+SQL:
+SELECT
+    p.pet_id,
+    p.name,
+    p.species,
+    p.status,
+    s.name AS shelter_name
+FROM PET p
+JOIN SHELTER s ON p.shelter_id = s.shelter_id
+WHERE p.status = 'available'
+ORDER BY p.pet_id;
+
+Question intent: summarize active pet occupancy by shelter.
+SQL:
+SELECT
+    s.shelter_id,
+    s.name AS shelter_name,
+    s.capacity,
+    COUNT(p.pet_id) AS active_pet_count,
+    ROUND(COUNT(p.pet_id) * 100.0 / s.capacity, 2) AS occupancy_rate
+FROM SHELTER s
+LEFT JOIN PET p
+    ON p.shelter_id = s.shelter_id
+   AND p.status IN ('available', 'reserved', 'medical_hold')
+GROUP BY s.shelter_id, s.name, s.capacity
+ORDER BY occupancy_rate DESC;
+
+Question intent: count applications by review status.
+SQL:
+SELECT
+    status,
+    COUNT(*) AS application_count
+FROM ADOPTION_APPLICATION
+GROUP BY status
+ORDER BY application_count DESC;
+
+Question intent: count cats currently in the adoption process.
+SQL:
+SELECT
+    COUNT(*) AS cat_in_adoption_process
+FROM ADOPTION_APPLICATION a
+JOIN PET p ON p.pet_id = a.pet_id
+WHERE p.species = 'Cat'
+  AND a.status IN ('Under Review', 'Approved');"""
+
+
+def prompt_implies_adoption_process(prompt: str) -> bool:
+    normalized = prompt.lower()
+    process_patterns = (
+        r"\bin\s+adoption\b",
+        r"\badoption\s+process\b",
+        r"\bunder\s+adoption\b",
+        r"\bcurrently\s+adopting\b",
+    )
+    available_patterns = (
+        r"\bavailable\s+for\s+adoption\b",
+        r"\badoptable\b",
+    )
+    if any(re.search(pattern, normalized) for pattern in available_patterns):
+        return False
+    return any(re.search(pattern, normalized) for pattern in process_patterns)
+
+
+def sql_references_adoption_workflow(sql: str) -> bool:
+    return re.search(
+        r"\b(ADOPTION_APPLICATION|ADOPTION_RECORD)\b",
+        mask_sql_strings(strip_sql_comments(sql)),
+        flags=re.IGNORECASE,
+    ) is not None
+
+
+def sql_uses_available_pet_status(sql: str) -> bool:
+    cleaned = strip_sql_comments(sql)
+    return re.search(r"\bstatus\b\s*=\s*'available'", cleaned, flags=re.IGNORECASE) is not None
+
+
+def validate_prompt_sql_semantics(prompt: str, sql: str) -> dict[str, Any]:
+    if prompt_implies_adoption_process(prompt):
+        if not sql_references_adoption_workflow(sql):
+            return {
+                "safe": False,
+                "reason": (
+                    "Prompt mentions adoption process semantics, but SQL does not reference "
+                    "ADOPTION_APPLICATION or ADOPTION_RECORD."
+                ),
+                "checkedBy": ["prompt_semantics"],
+                "semanticRule": "adoption_process_requires_workflow_tables",
+            }
+        if sql_uses_available_pet_status(sql):
+            return {
+                "safe": False,
+                "reason": (
+                    "Prompt mentions adoption process semantics, but SQL filters by PET.status='available', "
+                    "which represents adoptability, not workflow state."
+                ),
+                "checkedBy": ["prompt_semantics"],
+                "semanticRule": "adoption_process_not_equal_available_status",
+            }
+    return {"safe": True, "reason": "Prompt-SQL semantics are consistent.", "checkedBy": ["prompt_semantics"]}
+
+
+def semantic_guidance_for_prompt(prompt: str) -> dict[str, Any]:
+    normalized = prompt.strip()
+    if prompt_implies_adoption_process(normalized):
+        return {
+            "suggestedInterpretation": (
+                "Interpret 'in adoption' as pets in the adoption workflow (applications under review/approved), "
+                "not merely pets currently available."
+            ),
+            "suggestedPrompt": "How many cats are currently in the adoption process (under review or approved)?",
+            "suggestedSqlTemplate": (
+                "SELECT COUNT(*) AS cat_in_adoption_process "
+                "FROM ADOPTION_APPLICATION a "
+                "JOIN PET p ON p.pet_id = a.pet_id "
+                "WHERE p.species = 'Cat' AND a.status IN ('Under Review', 'Approved');"
+            ),
+        }
+    return {}
 
 
 def parse_llm_json(raw: str, prompt_method: str) -> dict[str, Any]:
@@ -600,6 +876,14 @@ def run_prompt_to_sql(
             validation["reason"],
             {"validation": validation, "generatedSql": sql},
         )
+    semantic_validation = validate_prompt_sql_semantics(prompt, sql)
+    if not semantic_validation["safe"]:
+        guidance = semantic_guidance_for_prompt(prompt)
+        raise LlmSqlError(
+            HTTPStatus.BAD_REQUEST,
+            semantic_validation["reason"],
+            {"validation": semantic_validation, "generatedSql": sql, **guidance},
+        )
 
     rows: list[dict[str, Any]] = []
     if execute:
@@ -613,6 +897,14 @@ def run_prompt_to_sql(
             repaired_raw = chat_client.complete_json(repair_messages, {"type": "json_object"})
             llm_output = parse_llm_json(repaired_raw, prompt_method)
             sql = llm_output["sql"]
+            semantic_validation = validate_prompt_sql_semantics(prompt, sql)
+            if not semantic_validation["safe"]:
+                guidance = semantic_guidance_for_prompt(prompt)
+                raise LlmSqlError(
+                    HTTPStatus.BAD_REQUEST,
+                    semantic_validation["reason"],
+                    {"validation": semantic_validation, "generatedSql": sql, **guidance},
+                )
             rows, validation = execute_generated_select(db_path, sql)
 
     return {

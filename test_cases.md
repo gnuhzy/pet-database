@@ -29,9 +29,9 @@ python -m unittest discover -s tests -v
 |---|---|
 | `InitializationTests` | database rebuild, index creation, clean high-severity audit |
 | `ConstraintTests` | schema-level `CHECK` and `UNIQUE` enforcement |
-| `QueryRegistryTests` | all official queries are read-only and executable in SQLite; LLM routing metadata |
+| `QueryRegistryTests` | all official queries are read-only and executable in SQLite; GLM-generated SQL validation |
 | `WorkflowTests` | create application, approve application, create follow-up |
-| `HttpSmokeTests` | frontend file serving, dashboard API, analytics API, review workflow API, LLM query API |
+| `HttpSmokeTests` | frontend file serving, dashboard API, analytics API, review workflow API, LLM bonus and GLM query API |
 
 ## Manual SQL Validation
 
@@ -154,11 +154,11 @@ Automated counterpart:
 
 - `WorkflowTests.test_create_approve_and_follow_up_workflow_stays_consistent`
 
-### `TC-WF-04` Safe natural-language query
+### `TC-WF-04` Removed fixed-template assistant route
 
 Goal:
 
-- confirm that prompt routing uses the reviewed registry instead of arbitrary SQL generation
+- confirm that the old 12-query prompt router is no longer exposed
 
 API example:
 
@@ -173,13 +173,11 @@ Content-Type: application/json
 
 Expected result:
 
-- response includes `matchedQuery.name`, `title`, `category`, and `readOnly`
-- `matchedQuery.readOnly` is `true`
-- results come from one of the official SQL files
+- response status is `404`
+- response body includes `Endpoint not found`
 
 Automated counterpart:
 
-- `QueryRegistryTests.test_llm_query_returns_read_only_metadata`
 - `HttpSmokeTests.test_frontend_and_core_api_paths_smoke`
 
 ### `TC-WF-05` GLM prompt-to-SQL generation
@@ -214,7 +212,7 @@ Automated counterpart:
 - `QueryRegistryTests.test_glm_generated_query_rejects_unsafe_sql`
 - `QueryRegistryTests.test_glm_generated_query_reports_non_json_output`
 - `QueryRegistryTests.test_self_check_repair_uses_one_sqlite_error_guided_retry`
-- `HttpSmokeTests.test_glm_generate_query_reports_missing_api_key_without_breaking_template_route`
+- `HttpSmokeTests.test_glm_generate_query_reports_missing_api_key`
 
 ## Constraint Validation
 
@@ -269,8 +267,8 @@ Use this checklist for demos:
 - dashboard cards render real data
 - applications page can create and review an application
 - analytics page renders occupancy and follow-up sections
-- LLM Bonus page shows audit rows and a read-only query catalog
-- safe natural-language query returns matched-query metadata
+- GLM assistant exposes prompt-method selection and validates generated SQL through the backend
+- LLM bonus architecture evidence remains available through `GET /api/llm-bonus` for the report
 
 Automated counterpart:
 

@@ -213,7 +213,7 @@ The following assumptions define the operational logic of the system.
 
 # ER Diagram
 
-See [mermaid-ER-diagram.png](https://github.com/gnuhzy/pet-database/blob/59b4e221aef3d1786b2dce3482cd23be1c500ea3/mermaid-ER-diagram.png)
+See [mermaid-ER-diagram.png](src\diagrams\er_diagram.png)
 
 ---
 
@@ -226,7 +226,7 @@ The following functional dependencies are stated **under the assumptions of the 
 - surrogate IDs are treated as the primary keys of the relations,
 - only dependencies intended by the schema are assumed,
 - descriptive fields such as `reviewer_name` and `vet_name` are treated as ordinary attributes in this project version rather than references to separate entities,
-- unless explicitly stated, no additional uniqueness constraints are assumed for attributes such as email or phone number.
+- the current SQLite schema also makes several uniqueness constraints explicit: `SHELTER.name` is `UNIQUE NOT NULL`, `ADOPTION_RECORD.application_id` is `UNIQUE`, and `APPLICANT.phone`, `APPLICANT.email`, `VOLUNTEER.phone`, and `VOLUNTEER.email` are `UNIQUE` when populated.
 
 Under these assumptions, the following dependencies characterize the relations and support the normalization discussion required by the project brief.
 
@@ -236,9 +236,13 @@ The current repository implementation keeps the ER design, entity set, table set
 
 - `CHECK` constraints for documented controlled domains such as pet status and application status,
 - same-row temporal `CHECK` constraints such as birth date before intake date,
+- `UNIQUE` on `SHELTER.name`, giving the shelter relation an alternate key in the delivered schema,
 - `UNIQUE` on `AdoptionRecord.application_id`, which matches FR-14 and the documented 1:0..1 relationship,
+- `UNIQUE` on non-null `APPLICANT.phone`, `APPLICANT.email`, `VOLUNTEER.phone`, and `VOLUNTEER.email`, preventing duplicate contact records in the current implementation,
 - runtime validation and audits for cross-table rules that cannot be expressed directly as SQLite `CHECK` constraints,
-- no new uniqueness assumptions for applicant or volunteer email addresses.
+- no new entities or relationship types beyond the original ER design.
+
+Because the applicant and volunteer contact fields remain nullable in the current SQLite schema, this report treats them as implementation-level alternate identifiers when populated rather than as unconditional candidate keys under strict formal analysis.
 
 SQLite is the official execution target for this repository version. The SQL deliverables in `src/queries/` are therefore written directly in SQLite syntax rather than relying on runtime dialect translation.
 
@@ -249,21 +253,41 @@ SQLite is the official execution target for this repository version. The SQL del
 ### 7.2.1 Shelter
 
 Shelter(*shelter_id*​, name,address, phone,capacity)
+Primary key:
+
+- `shelter_id`
+
+Foreign keys:
+
+- none
+
 Functional dependencies:
 
 - `shelter_id -> name, address, phone, capacity`
+- `name -> shelter_id, address, phone, capacity`
 
-Candidate key:
+Candidate keys:
 
 - `{shelter_id}`
+- `{name}`
 
-No other nontrivial functional dependency is assumed.
+Explanation:
+
+`name` is `UNIQUE NOT NULL` in the current SQLite implementation, so it functions as an alternate candidate key in addition to the surrogate key `shelter_id`.
 
 ---
 
 ### 7.2.2 Pet
 
 Pet(*pet_id*, shelter_id, name, species, breed, sex, color, estimated_birth_date, intake_date, status, is_sterilized, special_needs)
+
+Primary key:
+
+- `pet_id`
+
+Foreign keys:
+
+- `shelter_id -> SHELTER.shelter_id`
 
 Functional dependencies:
 
@@ -281,21 +305,42 @@ No other nontrivial functional dependency is assumed.
 
 Applicant(*applicant_id*​, full_name, phone, email, address, housing_type, has_pet_experience, created_at)
 
+Primary key:
+
+- `applicant_id`
+
+Foreign keys:
+
+- none
+
 Functional dependencies:
 
 - `applicant_id -> full_name, phone, email, address, housing_type, has_pet_experience, created_at`
+- for populated values in the current SQLite implementation, `phone -> applicant_id, full_name, email, address, housing_type, has_pet_experience, created_at`
+- for populated values in the current SQLite implementation, `email -> applicant_id, full_name, phone, address, housing_type, has_pet_experience, created_at`
 
 Candidate key:
 
 - `{applicant_id}`
 
-No other nontrivial functional dependency is assumed.
+Explanation:
+
+`phone` and `email` are each declared `UNIQUE` in the current SQLite schema, but they remain nullable. Therefore they are best interpreted as optional alternate identifiers when present, rather than unconditional candidate keys under strict relational theory.
 
 ---
 
 ### 7.2.4 AdoptionApplication
 
 AdoptionApplication(*application_id*​, applicant_id, pet_id, application_date, status, reason, reviewed_date, reviewer_name, decision_note)
+
+Primary key:
+
+- `application_id`
+
+Foreign keys:
+
+- `applicant_id -> APPLICANT.applicant_id`
+- `pet_id -> PET.pet_id`
 
 Functional dependencies:
 
@@ -312,6 +357,14 @@ No other nontrivial functional dependency is assumed in the baseline design.
 ### 7.2.5 AdoptionRecord
 
 AdoptionRecord(*adoption_id​*, application_id, adoption_date, final_adoption_fee, handover_note)
+
+Primary key:
+
+- `adoption_id`
+
+Foreign keys:
+
+- `application_id -> ADOPTION_APPLICATION.application_id`
 
 Functional dependencies:
 
@@ -334,6 +387,14 @@ This relation therefore has two candidate keys in the optimized design.
 
 FollowUp(*followup_id*​, adoption_id, followup_date, followup_type, pet_condition, adopter_feedback, result_status, staff_note)
 
+Primary key:
+
+- `followup_id`
+
+Foreign keys:
+
+- `adoption_id -> ADOPTION_RECORD.adoption_id`
+
 Functional dependencies:
 
 - `followup_id -> adoption_id, followup_date, followup_type, pet_condition, adopter_feedback, result_status, staff_note`
@@ -349,6 +410,14 @@ No other nontrivial functional dependency is assumed.
 ### 7.2.7 MedicalRecord
 
 MedicalRecord(*record_id​*, pet_id, visit_date, record_type, diagnosis, treatment, vet_name,  notes)
+
+Primary key:
+
+- `record_id`
+
+Foreign keys:
+
+- `pet_id -> PET.pet_id`
 
 Functional dependencies:
 
@@ -366,6 +435,14 @@ No other nontrivial functional dependency is assumed.
 
 Vaccination(*vaccination_id*​, pet_id, vaccine_name, dose_no, vaccination_date, next_due_date, vet_name, notes)
 
+Primary key:
+
+- `vaccination_id`
+
+Foreign keys:
+
+- `pet_id -> PET.pet_id`
+
 Functional dependencies:
 
 - `vaccination_id -> pet_id, vaccine_name, dose_no, vaccination_date, next_due_date, vet_name, notes`
@@ -382,21 +459,42 @@ No other nontrivial functional dependency is assumed in the baseline design.
 
 Volunteer(volunteer_id​, shelter_id, full_name, phone,email, join_date, availability_note)
 
+Primary key:
+
+- `volunteer_id`
+
+Foreign keys:
+
+- `shelter_id -> SHELTER.shelter_id`
+
 Functional dependencies:
 
 - `volunteer_id -> shelter_id, full_name, phone, email, join_date, availability_note`
+- for populated values in the current SQLite implementation, `phone -> volunteer_id, shelter_id, full_name, email, join_date, availability_note`
+- for populated values in the current SQLite implementation, `email -> volunteer_id, shelter_id, full_name, phone, join_date, availability_note`
 
 Candidate key:
 
 - `{volunteer_id}`
 
-No other nontrivial functional dependency is assumed.
+Explanation:
+
+`phone` and `email` are each `UNIQUE` in the delivered SQLite schema, but nullable. For that reason they are documented here as optional alternate identifiers when populated, not as unconditional candidate keys.
 
 ---
 
 ### 7.2.10 CareAssignment
 
 CareAssignment(*assignment_id​*, volunteer_id, pet_id, assignment_date, shift, task_type, status, notes)
+
+Primary key:
+
+- `assignment_id`
+
+Foreign keys:
+
+- `volunteer_id -> VOLUNTEER.volunteer_id`
+- `pet_id -> PET.pet_id`
 
 Functional dependencies:
 
@@ -414,8 +512,8 @@ No other nontrivial functional dependency is required in the baseline version.
 
 We can also choose to enforce stricter business constraints, then additional functional dependencies may arise:
 
-- if each applicant email must be unique, then `email -> applicant_id, full_name, phone, address, housing_type, has_pet_experience, created_at`;
-- if each volunteer email must be unique, then `email -> volunteer_id, shelter_id, full_name, phone, join_date, availability_note`;
+- if applicant contact fields such as `phone` and `email` are made both `UNIQUE` and `NOT NULL`, then each such attribute can be treated as an unconditional alternate candidate key rather than only an implementation-level unique identifier when populated;
+- if volunteer contact fields such as `phone` and `email` are made both `UNIQUE` and `NOT NULL`, then each such attribute can be treated as an unconditional alternate candidate key rather than only an implementation-level unique identifier when populated;
 - if each care assignment is unique for a given `(volunteer_id, pet_id, assignment_date, shift)`, then  
     `(volunteer_id, pet_id, assignment_date, shift) -> task_type, status, notes`.
 
@@ -427,7 +525,8 @@ Under the functional dependencies listed above, each relation is designed so tha
 - historical multi-valued information is decomposed into separate relations,
 - the many-to-many relationship between volunteers and pets is resolved by `CareAssignment`,
 - the adoption workflow is normalized by separating `AdoptionApplication` from `AdoptionRecord`,
+- the conceptually multi-valued facts in the domain, such as medical history, vaccination history, follow-up history, and volunteer-pet scheduling, are represented as separate relations rather than repeated groups inside one table,
 - follow-up data depends on a confirmed adoption event rather than on an application request.
 
-Therefore, under the stated assumptions, the schema is well aligned with a **3NF-style design**, and several relations are in fact close to **BCNF** under the baseline dependency set.
+Therefore, under the stated assumptions, the schema is well aligned with a **3NF-style design**, and several relations are in fact close to **BCNF** under the baseline dependency set. The current implementation-level `UNIQUE` constraints on `SHELTER.name` and on populated applicant/volunteer contact values do not introduce partial or transitive dependencies; instead, they strengthen tuple identification while preserving the same normalized relation structure.
 
